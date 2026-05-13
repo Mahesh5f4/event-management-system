@@ -1,196 +1,224 @@
-# 🌌 Wanderful: Enterprise-Grade High-Concurrency Event Platform
+# 🌌 EventHub: Enterprise High-Concurrency Event Ecosystem
 
 ![Full Stack](https://img.shields.io/badge/Full%20Stack-Enterprise--Ready-blue?style=for-the-badge)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Redis](https://img.shields.io/badge/Redis-Distributed%20Locking-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![GSAP](https://img.shields.io/badge/GSAP-Cinematic%20UI-88CE02?style=for-the-badge&logo=greensock&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Async%20Messaging-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
 
-**Wanderful** is a mission-critical full-stack ecosystem designed to handle massive traffic spikes during high-demand event bookings. It features a **distributed concurrency model**, **real-time synchronization**, and a **cinematic UX** that sets a new standard for modern travel and event platforms.
+## 1. Project Overview
+EventHub is a robust, full-stack platform designed to solve the challenges of high-demand event ticketing and real-time seat management. It focuses on **strict transactional consistency**, **distributed concurrency control**, and **cinematic user experiences**.
+
+### Primary Use Cases
+- High-traffic "Flash Sale" event ticketing.
+- Real-time seat reservation with distributed locking.
+- Automated ticket fulfillment and digital asset generation.
+
+### Target Users
+- **End Users**: Seeking a seamless, high-performance booking experience.
+- **Event Organizers**: Requiring real-time analytics and inventory management.
+- **Administrators**: Monitoring system health and managing global configurations.
 
 ---
 
-## 🚀 Performance Benchmarks (JMeter Verified)
+## 2. Features
 
-| Metric | Achievement | Engineering Strategy |
-| :--- | :--- | :--- |
-| **Throughput** | **150+ Requests/Sec** | Non-blocking I/O + Optimized Query Execution |
-| **Concurrency** | **200+ Parallel Users** | Distributed Stateless Auth (JWT) |
-| **P99 Latency** | **<120ms** | Redis L2 Caching + Connection Pooling |
-| **Reliability** | **99.9% Booking Success** | Optimistic Locking + Distributed Redis Locks |
-| **Animation Performance** | **60 FPS** | GSAP Hardware-Accelerated Rendering |
+| Category | Features |
+| :--- | :--- |
+| **Authentication** | JWT Stateless Auth, Google OAuth 2.0 Integration, OTP-based Verification. |
+| **Event Management** | CRUD operations, Soft-deletes, Image Uploads, Scheduled Event Cleanup. |
+| **Booking System** | Real-time Seat Claiming, Distributed Redis Mutex, Optimistic Locking. |
+| **Admin Features** | Traffic Analytics, Revenue Tracking, Concurrent Request Monitoring. |
+| **Scalability** | L2 Caching (Redis), Async Messaging (RabbitMQ), Connection Pooling. |
+| **Monitoring** | Spring Actuator Endpoints, Prometheus Integration, Performance Metrics. |
+| **Security** | RBAC (Role-Based Access Control), Rate Limiting, Request Correlation Tracing. |
 
 ---
 
-## 🏛️ Database Architecture (Far Bigger Design)
+## 3. System Architecture
 
-The system utilizes a hybrid persistence model: **MySQL 8.0** for relational consistency and **Redis 7.0** for high-speed distributed locking and caching.
-
-### 📊 Entity Relationship Diagram (ERD)
+EventHub utilizes a distributed architecture designed for horizontal scalability and fault tolerance.
 
 ```mermaid
-erDiagram
-    USER ||--o{ BOOKING : places
-    EVENT ||--o{ BOOKING : contains
-    USER {
-        bigint id PK
-        string name
-        string email UK
-        string password
-        enum role
-        string otp
-        datetime otp_expiry
-        datetime last_active
-    }
-    EVENT {
-        bigint id PK
-        string title
-        text description
-        string location
-        datetime start_time
-        datetime end_time
-        double price
-        int total_seats
-        int available_seats
-        bigint version "Optimistic Lock"
-        datetime created_at
-        datetime updated_at
-        boolean deleted
-    }
-    BOOKING {
-        bigint id PK
-        bigint event_id FK
-        bigint user_id FK
-        string user_email
-        int ticket_count
-        string seats "JSON/CSV"
-        string status
-        datetime created_at
-        string event_title "Historical Snapshot"
-        double event_price "Historical Snapshot"
-    }
-```
-
-### 🗄️ Detailed Table Specifications
-
-#### 1. `users` Table
-| Column | Type | Constraints | Purpose |
-| :--- | :--- | :--- | :--- |
-| `id` | `BIGINT` | `PRIMARY KEY, AUTO_INCREMENT` | Unique identifier |
-| `email` | `VARCHAR(255)` | `UNIQUE, NOT NULL` | Login identifier (Indexed) |
-| `role` | `VARCHAR(20)` | `NOT NULL` | RBAC: `USER` or `ADMIN` |
-| `last_active` | `DATETIME` | - | Real-time traffic tracking |
-
-- **Index**: `idx_email` (B-Tree) for O(1) login lookups.
-
-#### 2. `events` Table
-| Column | Type | Constraints | Purpose |
-| :--- | :--- | :--- | :--- |
-| `available_seats` | `INT` | `NOT NULL` | Dynamic seat inventory |
-| `version` | `BIGINT` | `NOT NULL` | **Optimistic Locking** versioning |
-| `deleted` | `BOOLEAN` | `DEFAULT FALSE` | Soft-delete support |
-
-- **Index**: `idx_start_time` for fast chronological event discovery.
-
-#### 3. `bookings` Table
-| Column | Type | Constraints | Purpose |
-| :--- | :--- | :--- | :--- |
-| `event_id` | `BIGINT` | `FOREIGN KEY` | Association with Event |
-| `status` | `VARCHAR(20)` | `NOT NULL` | `CONFIRMED`, `CANCELLED`, `PENDING` |
-| `event_title` | `VARCHAR(255)` | - | Denormalized snapshot for history |
-
-- **Composite Index**: `idx_booking_event_status` (event_id, status) for analytics.
-- **Composite Index**: `idx_booking_user_history` (user_email, created_at) for fast profile loading.
-
-### ⚡ Redis Cache Schema (Key-Value)
-| Key Pattern | Value Type | TTL | Purpose |
-| :--- | :--- | :--- | :--- |
-| `seat_lock:{eventId}:{seatId}` | `String (userId)` | 5 Mins | **Distributed Mutex** for seat claims |
-| `event:details:{eventId}` | `JSON (EventDTO)` | 10 Mins | Read-heavy detail caching |
-| `user:rate_limit:{ip}` | `Integer` | 1 Min | API Rate Limiting |
-
----
-
-## 🔄 Critical System Flows
-
-### 🧬 The "Atomic Booking" Flow
-To prevent overbooking in high-concurrency scenarios, we use a **Two-Phase Consistency Pattern**:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant API
-    participant Redis
-    participant MySQL
-    
-    User->>API: POST /bookings (eventId, seatId)
-    API->>Redis: SETNX seat_lock:{eventId}:{seatId} (5m)
-    alt Seat is Locked
-        Redis-->>API: Conflict (409)
-        API-->>User: Seat is temporarily held
-    else Lock Acquired
-        API->>MySQL: SELECT event FROM events WHERE id=?
-        API->>MySQL: UPDATE events SET available_seats=available_seats-1 WHERE id=? AND version=?
-        alt Version Mismatch (Collision)
-            MySQL-->>API: OptimisticLockException
-            API->>Redis: DEL seat_lock:{eventId}:{seatId}
-            API-->>User: Retry Booking (Concurrent Update)
-        else Success
-            API->>MySQL: INSERT INTO bookings (...)
-            API-->>User: Booking Confirmed (201)
-        end
+graph TD
+    subgraph Client_Layer
+        Web[React Cinematic UI]
+        Mobile[Mobile Browser]
     end
+
+    subgraph API_Gateway
+        Auth[Spring Security / JWT]
+        WS[WebSocket / STOMP]
+    end
+
+    subgraph Service_Layer
+        ES[Event Service]
+        BS[Booking Service]
+        LS[Locking Service]
+        NS[Notification Service]
+    end
+
+    subgraph Infrastructure
+        MySQL[(MySQL 8.0)]
+        Redis[(Redis Cache/Lock)]
+        RMQ[[RabbitMQ]]
+    end
+
+    Web --> Auth
+    Auth --> ES
+    Auth --> BS
+    BS --> LS
+    LS --> Redis
+    BS --> RMQ
+    RMQ --> NS
+    ES --> MySQL
+    BS --> MySQL
+    WS <--> Web
+```
+
+### Request Flow & Concurrency
+1. **Seat Claiming**: When a user selects a seat, a distributed lock is placed in **Redis** using `SETNX` with a 5-minute TTL.
+2. **Transactional Booking**: The actual booking occurs within a database transaction, protected by **Optimistic Locking** (`@Version`) to prevent race conditions at the persistence layer.
+3. **Async Workflows**: Post-booking tasks (PDF generation, Email) are pushed to **RabbitMQ**, ensuring the main thread returns a response in `<100ms`.
+
+---
+
+## 4. Tech Stack
+
+| Category | Technology |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, GSAP. |
+| **Backend** | Java 17, Spring Boot 3.4, Spring Security, Spring Data JPA. |
+| **Database** | MySQL 8.0 (Relational Consistency). |
+| **Caching/Locking** | Redis 7.0 (L2 Cache, Distributed Mutex). |
+| **Messaging** | RabbitMQ (Asynchronous Task Decoupling). |
+| **Monitoring** | Spring Actuator, Prometheus, Micrometer. |
+| **Security** | JWT, RSA256 Signatures, Google OAuth 2.0. |
+
+---
+
+## 5. Folder Structure
+
+```text
+.
+├── backend/                # Spring Boot Maven Project
+│   ├── src/main/java/      # Domain-driven packages (auth, booking, events, common)
+│   ├── src/main/resources/ # Configuration and static assets
+│   ├── monitoring/         # Prometheus/Grafana configurations
+│   ├── docker-compose.yml  # Infrastructure orchestration
+│   └── pom.xml             # Dependency management
+├── frontend/               # Vite React Project
+│   ├── src/components/     # Atomic UI components and Hero section
+│   ├── src/store/          # Redux Toolkit slices and hooks
+│   ├── src/pages/          # Routing entry points
+│   ├── tailwind.config.js  # JIT-enabled styling configuration
+│   └── tsconfig.json       # Type-safety configurations
+└── README.md               # Master Documentation
 ```
 
 ---
 
-## 🛠️ Advanced Technology Techniques
+## 6. Database Design
 
-### **Backend Core (Enterprise Patterns)**
-- **Distributed Locking**: Using Redis atomic primitives to ensure no two users can claim the same seat during the same 5-minute window.
-- **Asynchronous Processing**: **RabbitMQ** handles PDF ticket generation and email notifications outside the main request thread, improving response times.
-- **Stateless Identity**: **JWT + RSA256** signatures combined with **Google OAuth 2.0** for secure, scalable authentication.
-- **Observability**: **Spring Actuator + Prometheus** integration for real-time monitoring of heap memory, active threads, and HTTP throughput.
-- **Self-Healing**: Automated background schedulers for cleaning up expired Redis locks and soft-deleted records.
+### Core Entities
+- **User**: Stores identity, RBAC roles, and activity tracking.
+- **Event**: Core inventory entity with `totalSeats`, `availableSeats`, and `@Version` for concurrency.
+- **Booking**: Junction entity with historical snapshots of event data to ensure audit integrity.
 
-### **Frontend Excellence (Cinematic UI)**
-- **GSAP Parallax Engine**: A hardware-accelerated mouse-tracking system for the hero section, ensuring smooth visuals even during DOM updates.
-- **Liquid-Glass Design**: Advanced Tailwind/CSS architecture utilizing `backdrop-filter`, `background-blend-mode`, and mask-compositing for premium glassmorphism.
-- **State Normalization**: **Redux Toolkit** Entity Adapters manage the local cache, reducing the need for redundant API calls.
+### Seat Locking Flow
+1. **Request**: User clicks a seat.
+2. **Lock**: `Redis.setIfAbsent("seat_lock:" + eventId + ":" + seatId, userId, 5m)`.
+3. **Validate**: If `true`, proceed to checkout; if `false`, seat is already held.
+4. **Finalize**: On successful booking, the Redis lock is released and the MySQL `available_seats` is decremented.
 
 ---
 
-## 🚦 Setup & Production Deployment
+## 7. API Documentation
 
-### 1. Infrastructure (Docker)
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `POST` | `/auth/login` | Authenticates user and returns JWT. |
+| `GET` | `/events?page=0` | Fetches paginated list of active events. |
+| `POST` | `/bookings` | Atomic booking request with seat validation. |
+| `GET` | `/admin/analytics/traffic` | Returns real-time traffic and revenue data. |
+
+### Request Example (`POST /bookings`)
+```json
+{
+  "eventId": 101,
+  "seatId": "A12",
+  "ticketCount": 1
+}
+```
+
+---
+
+## 8. Authentication & Security
+- **JWT Flow**: Claims-based tokens signed with RSA256. Tokens are validated via a custom `OncePerRequestFilter`.
+- **OAuth Integration**: Seamless login via Google, mapping external profiles to internal `User` entities.
+- **Role-Based Access**: Method-level security using `@PreAuthorize("hasRole('ADMIN')")`.
+
+---
+
+## 9. Scalability & Performance
+- **Optimistic Locking**: Prevents "double-booking" without the performance penalty of database row-locking.
+- **Redis L2 Caching**: Frequently accessed event data is cached with a 10-minute TTL to reduce DB read pressure.
+- **RabbitMQ Workers**: Decouples CPU-intensive PDF generation from the API request cycle.
+
+---
+
+## 10. Local Development Setup
+
+### Infrastructure (Docker)
 ```bash
-# Navigate to backend and spin up infrastructure
 cd backend
 docker-compose up -d
 ```
-- **MySQL**: `3306` (Root: pass, DB: event_db)
-- **Redis**: `6379`
-- **RabbitMQ**: `5672` (Admin: `15672`)
-- **Prometheus**: `9090`
 
-### 2. Backend Environment
-```bash
-# From the backend directory
-./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
-```
+### Backend
+1. Configure `application.yml` with your DB/Redis/Rabbit credentials.
+2. Run: `./mvnw spring-boot:run`
 
-### 3. Frontend Environment
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
+### Frontend
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
 
 ---
 
-## 👨‍💻 Developer & Visionary
-**Mahesh** - *Full Stack Solutions Architect*
-- 📧 [Contact me](mailto:mahesh20104@gmail.com)
-- 💼 [LinkedIn](https://linkedin.com/in/mahesh)
+## 11. Deployment
+- **Frontend**: Optimized static build served via Nginx or Vercel.
+- **Backend**: Containerized Spring Boot JAR deployed on AWS ECS or Kubernetes.
+- **Database**: Managed RDS (MySQL) with read-replicas for scaling.
 
-> "Architecting the future of scalable real-time systems."
+---
+
+## 12. Screenshots / GIFs
+![Hero Section](https://via.placeholder.com/800x400?text=Cinematic+Hero+Section)
+*Caption: Cinematic GSAP-powered Hero section with mouse parallax.*
+
+![Admin Analytics](https://via.placeholder.com/800x400?text=Real-time+Analytics+Dashboard)
+*Caption: Real-time traffic and revenue monitoring for administrators.*
+
+---
+
+## 13. Future Improvements
+- **Idempotency Keys**: Implementing keys for all write operations to prevent duplicate bookings during network retries.
+- **GraphQL Integration**: Reducing over-fetching for complex event/user relationship queries.
+- **Auto-Scaling**: Kubernetes Horizontal Pod Autoscaler (HPA) based on custom Prometheus metrics.
+
+---
+
+## 14. Contributing
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+
+## 15. README STYLE RULES
+- **Tone**: Rigorous, technical, and objective.
+- **Formatting**: Heavy use of tables and Mermaid diagrams for quick parsing.
+- **AI-Ready**: Structured with clear headings and property keys for easy LLM context ingestion.
