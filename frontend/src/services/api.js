@@ -29,6 +29,12 @@ export const eventService = {
   create: (eventData) => api.post('/events', eventData),
   update: (id, eventData) => api.patch(`/events/${id}`, eventData),
   delete: (id) => api.delete(`/events/${id}`),
+  getRecommendations: (id) => api.get(`/events/${id}/recommendations`),
+};
+
+export const reviewService = {
+  getEventReviews: (eventId) => api.get(`/events/${eventId}/reviews`),
+  addReview: (eventId, reviewData) => api.post(`/events/${eventId}/reviews`, reviewData),
 };
 
 export const bookingService = {

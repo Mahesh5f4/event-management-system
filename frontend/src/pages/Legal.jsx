@@ -42,7 +42,7 @@ const Legal = () => {
               <div className="space-y-4">
                  <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Registered Office</div>
                  <p className="text-white/60 text-sm leading-relaxed">
-                    Equilibrium Events India Pvt. Ltd.<br />
+                    EventHub Events India Pvt. Ltd.<br />
                     Technology Park, Madhapur<br />
                     Hyderabad, TS 500081
                  </p>

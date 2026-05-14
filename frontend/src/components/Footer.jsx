@@ -31,7 +31,7 @@ const Footer = () => {
           <div className="lg:col-span-5 space-y-8">
             <Link to="/" className="flex items-center gap-2 text-white font-medium">
               <Infinity size={32} strokeWidth={1.5} />
-              <span className="tracking-tight text-2xl italic">Equilibrium</span>
+              <span className="tracking-tight text-2xl font-semibold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">EventHub</span>
             </Link>
             
             <p className="text-white/40 text-lg leading-relaxed max-w-sm">

@@ -2,14 +2,15 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchEventById, clearCurrentEvent } from '../store/slices/eventsSlice';
-import { bookingService, seatLockService } from '../services/api';
-import { MapPin, Calendar, Clock, Ticket, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
+import { eventService, bookingService, seatLockService } from '../services/api';
+import { MapPin, Calendar, Clock, Ticket, ArrowLeft, ArrowRight, ChevronRight, Star, MessageSquare, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
+import { reviewService } from '../services/api';
 
 const Seat = memo(({ seatId, isBooked, isLocked, isSelected, onSelect, label }) => (
   <button
@@ -37,14 +38,14 @@ const SeatMap = memo(({ total, rows, cols, bookedSeats, lockedByOthers, selected
         {Array.from({ length: cols }).map((_, colIndex) => {
           const seatIndex = rowIndex * cols + colIndex;
           if (seatIndex >= total) return null;
-          
+
           const seatId = `${String.fromCharCode(65 + rowIndex)}${colIndex + 1}`;
           const isBooked = bookedSeats.includes(seatId);
           const isLocked = lockedByOthers.includes(seatId);
           const isSelected = selectedSeats.includes(seatId);
-          
+
           return (
-            <Seat 
+            <Seat
               key={seatId}
               seatId={seatId}
               isBooked={isBooked}
@@ -66,10 +67,10 @@ const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { user } = useAppSelector(state => state.auth);
   const { currentEvent: event, loading } = useAppSelector(state => state.events);
-  
+
   const [step, setStep] = useState('details'); // details, seats
   const [ticketQuantity, setTicketQuantity] = useState(2);
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -94,9 +95,34 @@ const EventDetails = () => {
     return () => clearInterval(timer);
   }, [step, selectedSeats.length]);
 
+  const [recommendations, setRecommendations] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '', imageUrl: '' });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
   useEffect(() => {
     dispatch(fetchEventById(id));
     
+    const fetchRecommendations = async () => {
+      try {
+        const resp = await eventService.getRecommendations(id);
+        setRecommendations(resp.data.data);
+      } catch (err) {
+        console.error('Error fetching recommendations:', err);
+      }
+    };
+    fetchRecommendations();
+
+    const fetchReviews = async () => {
+      try {
+        const resp = await reviewService.getEventReviews(id);
+        setReviews(resp.data.data);
+      } catch (err) {
+        console.error('Error fetching reviews:', err);
+      }
+    };
+    fetchReviews();
+
     const fetchSeatData = async () => {
       try {
         const [lockedResp, bookedResp] = await Promise.all([
@@ -133,7 +159,7 @@ const EventDetails = () => {
       stompClient.deactivate();
       dispatch(clearCurrentEvent());
       if (!isProceedingToCheckout.current && selectedSeats.length > 0) {
-        seatLockService.unlockMultiple(id, selectedSeats).catch(() => {});
+        seatLockService.unlockMultiple(id, selectedSeats).catch(() => { });
       }
     };
   }, [id, user, dispatch]);
@@ -143,13 +169,13 @@ const EventDetails = () => {
       try {
         await seatLockService.unlock(id, seatId);
         setSelectedSeats(prev => prev.filter(s => s !== seatId));
-      } catch (err) {}
+      } catch (err) { }
     } else {
       if (selectedSeats.length >= ticketQuantity) return;
       try {
         await seatLockService.lock(id, seatId);
         setSelectedSeats(prev => [...prev, seatId].sort());
-      } catch (err) {}
+      } catch (err) { }
     }
   }, [id, selectedSeats.length, ticketQuantity]);
 
@@ -177,7 +203,7 @@ const EventDetails = () => {
       <p className="text-white/40 text-sm font-medium">Syncing event data...</p>
     </div>
   );
-  
+
   if (!event) return (
     <div className="container mx-auto px-6 py-32 text-center">
       <h2 className="text-3xl font-medium text-white mb-6">Event not found</h2>
@@ -190,7 +216,7 @@ const EventDetails = () => {
       <div className="container mx-auto px-6 max-w-7xl">
         <AnimatePresence mode="wait">
           {step === 'details' ? (
-            <motion.div 
+            <motion.div
               key="details"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -199,8 +225,8 @@ const EventDetails = () => {
             >
               <div className="lg:col-span-7 space-y-10">
                 <div className="relative rounded-[2.5rem] overflow-hidden aspect-video border border-white/10 shadow-2xl">
-                  <img 
-                    src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1200'} 
+                  <img
+                    src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1200'}
                     alt={event.title}
                     className="w-full h-full object-cover"
                     loading="eager"
@@ -249,14 +275,13 @@ const EventDetails = () => {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {[1, 2, 3, 4, 5].map(n => (
-                        <button 
-                          key={n} 
-                          onClick={() => setTicketQuantity(n)} 
-                          className={`w-12 h-12 rounded-2xl font-bold text-sm transition-all duration-300 ${
-                            ticketQuantity === n 
-                              ? 'bg-white text-black scale-105 shadow-xl shadow-white/10' 
+                        <button
+                          key={n}
+                          onClick={() => setTicketQuantity(n)}
+                          className={`w-12 h-12 rounded-2xl font-bold text-sm transition-all duration-300 ${ticketQuantity === n
+                              ? 'bg-white text-black scale-105 shadow-xl shadow-white/10'
                               : 'bg-white/5 text-white/40 hover:text-white border border-white/5'
-                          }`}
+                            }`}
                         >
                           {n}
                         </button>
@@ -264,31 +289,213 @@ const EventDetails = () => {
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full py-5 text-base"
-                    onClick={() => { setSelectedSeats([]); setStep('seats'); }} 
+                    onClick={() => { setSelectedSeats([]); setStep('seats'); }}
                     disabled={event.availableSeats === 0}
                   >
-                    {event.availableSeats === 0 ? 'Waitlist Only' : 'Select Seats'} 
+                    {event.availableSeats === 0 ? 'Waitlist Only' : 'Select Seats'}
                     <ChevronRight size={18} className="ml-2" />
                   </Button>
                 </Card>
               </div>
+
+              {/* Reviews Section */}
+              <div className="lg:col-span-12 mt-20 pt-20 border-t border-white/5 grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-7 space-y-10">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-3xl font-medium text-white tracking-tight">Guest Reviews</h3>
+                      <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">Authentic experiences from our community</p>
+                    </div>
+                    <Badge variant="glass" className="px-4 py-2 flex items-center gap-2 backdrop-blur-xl">
+                      <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-xl font-bold">{event.averageRating?.toFixed(1) || '0.0'}</span>
+                      <span className="text-white/40 text-xs font-medium">({event.reviewCount || 0})</span>
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-6">
+                    {reviews.length > 0 ? reviews.map((review) => (
+                      <Card key={review.id} className="p-6 space-y-4 hover:bg-white/[0.04] transition-colors group">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+                              <img src={review.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${review.userName}`} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <h4 className="text-white font-medium">{review.userName}</h4>
+                              <div className="flex gap-1 mt-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} size={10} className={i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-white/10'} />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-white/60 leading-relaxed text-sm font-light italic">"{review.comment}"</p>
+                        {review.imageUrl && (
+                          <div className="relative rounded-2xl overflow-hidden aspect-video w-48 border border-white/10 mt-4 group-hover:scale-105 transition-transform duration-500">
+                             <img src={review.imageUrl} alt="Review" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </Card>
+                    )) : (
+                      <div className="p-12 text-center rounded-[2.5rem] bg-white/[0.02] border border-dashed border-white/10">
+                        <MessageSquare className="mx-auto text-white/10 mb-4" size={40} />
+                        <p className="text-white/20 font-medium tracking-tight">No reviews yet. Be the first to share your experience!</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5">
+                  <Card className="p-8 space-y-8 sticky top-32">
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-medium text-white tracking-tight">Share Your Experience</h4>
+                      <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Help others discover this event</p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Rating</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${newReview.rating >= star ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/5 text-white/20 hover:text-white'}`}
+                            >
+                              <Star size={18} className={newReview.rating >= star ? 'fill-yellow-500' : ''} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Your Feedback</label>
+                        <textarea
+                          placeholder="How was the event? Mention the vibe, crowd, or any tips..."
+                          value={newReview.comment}
+                          onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-white/20 focus:ring-1 focus:ring-white/20 transition-all outline-none min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Photo URL (Optional)</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Paste an image URL..."
+                            value={newReview.imageUrl}
+                            onChange={(e) => setNewReview(prev => ({ ...prev, imageUrl: e.target.value }))}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-white/20 focus:ring-1 focus:ring-white/20 transition-all outline-none"
+                          />
+                          <Camera className="absolute left-3 top-3 text-white/20" size={16} />
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full py-4"
+                        onClick={async () => {
+                          if (!user) { navigate('/login'); return; }
+                          if (!newReview.comment) return;
+                          setIsSubmittingReview(true);
+                          try {
+                            await reviewService.addReview(id, newReview);
+                            const resp = await reviewService.getEventReviews(id);
+                            setReviews(resp.data.data);
+                            setNewReview({ rating: 5, comment: '', imageUrl: '' });
+                            // Refresh event to get new average rating
+                            dispatch(fetchEventById(id));
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Failed to submit review');
+                          } finally {
+                            setIsSubmittingReview(false);
+                          }
+                        }}
+                        disabled={isSubmittingReview || !newReview.comment}
+                      >
+                        {isSubmittingReview ? 'Submitting...' : 'Post Review'}
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
+              {recommendations.length > 0 && (
+                <div className="lg:col-span-12 mt-20 pt-20 border-t border-white/5">
+                  <div className="flex items-center justify-between mb-10">
+                    <div>
+                      <h3 className="text-3xl font-medium text-white tracking-tight">Similar Events</h3>
+                      <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">Recommended by our AI Engine</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {recommendations.map((rec) => (
+                      <Card 
+                        key={rec.id} 
+                        className="group cursor-pointer overflow-hidden transform-gpu hover:bg-white/[0.07] transition-all duration-500"
+                        onClick={() => {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            navigate(`/event/${rec.id}`);
+                        }}
+                      >
+                        <div className="aspect-video relative overflow-hidden">
+                          <img 
+                            src={rec.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600'} 
+                            alt={rec.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                          <div className="absolute top-4 right-4">
+                            <Badge variant="glass" className="backdrop-blur-xl">₹{rec.price}</Badge>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xl font-medium text-white tracking-tight line-clamp-1">{rec.title}</h4>
+                            <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1 rounded-lg">
+                              <Star size={12} className="text-yellow-500 fill-yellow-500" />
+                              <span className="text-xs text-white/60 font-bold">{rec.averageRating?.toFixed(1) || '0.0'}</span>
+                            </div>
+                          </div>
+                          <p className="text-white/40 text-xs line-clamp-2 mb-4 font-light leading-relaxed">{rec.description}</p>
+                          <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                            <div className="flex items-center gap-2 text-white/40">
+                              <Calendar size={14} />
+                              <span className="text-[10px] font-bold uppercase tracking-wider">
+                                {new Date(rec.startTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-emerald-500">
+                                <span className="text-[10px] font-bold uppercase tracking-widest italic">AI Match</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="seats"
-              initial={{ opacity: 0, scale: 0.98 }} 
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.02 }}
               className="space-y-12"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 transform-gpu">
                 <div className="flex items-center gap-6">
-                  <button 
+                  <button
                     onClick={() => {
                       if (selectedSeats.length > 0) {
-                        seatLockService.unlockMultiple(id, selectedSeats).catch(() => {});
+                        seatLockService.unlockMultiple(id, selectedSeats).catch(() => { });
                         setSelectedSeats([]);
                       }
                       setStep('details');
@@ -309,7 +516,7 @@ const EventDetails = () => {
                     <span className="text-xl font-bold text-white leading-none mt-1">{selectedSeats.length} / {ticketQuantity}</span>
                   </Card>
                   {selectedSeats.length > 0 && (
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 transform-gpu"
@@ -333,7 +540,7 @@ const EventDetails = () => {
 
                     <div className="flex flex-col gap-5 items-center mb-16 transform-gpu">
                       {seatGridConfig && (
-                        <SeatMap 
+                        <SeatMap
                           {...seatGridConfig}
                           bookedSeats={bookedSeats}
                           lockedByOthers={lockedByOthers}
@@ -364,14 +571,14 @@ const EventDetails = () => {
                       <Ticket size={24} className="text-white" />
                       <h3 className="text-xl font-medium text-white uppercase tracking-tight">Order Summary</h3>
                     </div>
-                    
+
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Seats</span>
                         <div className="flex flex-wrap gap-1 justify-end">
-                           {selectedSeats.length > 0 ? selectedSeats.map(s => (
-                             <Badge key={s} variant="primary" className="text-[10px]">{s}</Badge>
-                           )) : <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">None selected</span>}
+                          {selectedSeats.length > 0 ? selectedSeats.map(s => (
+                            <Badge key={s} variant="primary" className="text-[10px]">{s}</Badge>
+                          )) : <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">None selected</span>}
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
@@ -386,7 +593,7 @@ const EventDetails = () => {
                       </div>
                     </div>
 
-                    <Button 
+                    <Button
                       className="w-full py-5 text-base"
                       onClick={handleBook}
                       disabled={selectedSeats.length !== ticketQuantity}

@@ -6,7 +6,7 @@ const Terms = () => {
   const sections = [
     {
       title: "Agreement to Terms",
-      content: "By accessing Equilibrium, you agree to be bound by these Terms and Conditions. These terms govern your use of our platform and the purchase of digital event passes."
+      content: "By accessing EventHub, you agree to be bound by these Terms and Conditions. These terms govern your use of our platform and the purchase of digital event passes."
     },
     {
       title: "Booking & Payments",
@@ -51,7 +51,7 @@ const Terms = () => {
 
         <footer className="mt-20 pt-12 border-t border-white/5">
           <p className="text-white/20 text-xs leading-relaxed max-w-2xl">
-            These terms constitute a binding legal agreement between you and Equilibrium. We reserve the right to modify these terms at any time. Continued use of the platform implies acceptance of updated terms.
+            These terms constitute a binding legal agreement between you and EventHub. We reserve the right to modify these terms at any time. Continued use of the platform implies acceptance of updated terms.
           </p>
         </footer>
       </div>

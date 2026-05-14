@@ -16,7 +16,7 @@ const About = () => {
 
   const projects = [
     {
-      title: 'Premium Event Platform',
+      title: 'EventHub — Premium Event Discovery',
       desc: 'Production-style booking platform engineered to survive flash-sale traffic without double-booking.',
       tech: ['Spring Boot', 'Redis', 'MySQL', 'React'],
       metrics: '150 req/s under load, < 2% failure rate'

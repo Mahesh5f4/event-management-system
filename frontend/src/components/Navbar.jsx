@@ -26,8 +26,8 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transform-gpu antialiased">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 text-white font-medium z-50">
-        <Infinity size={24} strokeWidth={1.5} />
-        <span className="tracking-tight text-lg">Equilibrium</span>
+        <Infinity size={24} strokeWidth={1.5} className="text-white" />
+        <span className="tracking-tight text-xl font-semibold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">EventHub</span>
       </Link>
 
       {/* Desktop Navigation */}
