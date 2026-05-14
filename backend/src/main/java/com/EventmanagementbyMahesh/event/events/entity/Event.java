@@ -4,7 +4,12 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.*;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "events", indexes = {
         @Index(name = "idx_start_time", columnList = "startTime"),
