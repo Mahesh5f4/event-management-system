@@ -37,8 +37,12 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/events").permitAll()
                         .requestMatchers("/events/{id}").permitAll()
-                        .requestMatchers("/bookings/event/*/seats").permitAll() // Added
+                        .requestMatchers("/events/*/recommendations").permitAll()
+                        .requestMatchers("/bookings/event/*/seats").permitAll()
                         .requestMatchers("/seats/*/locked").permitAll()
+                        .requestMatchers("/ws-booking/**").permitAll()
+                        .requestMatchers("/admin/analytics/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/events/*/reviews").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )

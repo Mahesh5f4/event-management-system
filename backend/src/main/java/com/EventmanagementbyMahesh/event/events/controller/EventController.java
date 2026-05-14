@@ -3,11 +3,13 @@ package com.EventmanagementbyMahesh.event.events.controller;
 import com.EventmanagementbyMahesh.event.common.ApiResponse;
 import com.EventmanagementbyMahesh.event.events.dto.*;
 import com.EventmanagementbyMahesh.event.events.service.EventService;
+import com.EventmanagementbyMahesh.event.events.service.MLRecommendationService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -15,9 +17,19 @@ import java.util.Map;
 public class EventController {
 
     private final EventService service;
+    private final MLRecommendationService recommendationService;
 
-    public EventController(EventService service) {
+    public EventController(EventService service, MLRecommendationService recommendationService) {
         this.service = service;
+        this.recommendationService = recommendationService;
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getRecommendations(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                recommendationService.getRecommendations(id),
+                "Recommended events fetched successfully"
+        ));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

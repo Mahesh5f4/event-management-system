@@ -36,6 +36,12 @@ public class Event {
 
     private Double price;
 
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
+
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
+
     @Column(nullable = false)
     private Integer totalSeats;
 
@@ -75,6 +81,8 @@ public class Event {
     public Long getVersion() { return version; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Double getAverageRating() { return averageRating; }
+    public Integer getReviewCount() { return reviewCount; }
 
     public void setId(Long id) { this.id = id; }
     public void setTitle(String title) { this.title = title; }
@@ -87,4 +95,6 @@ public class Event {
     public void setTotalSeats(Integer totalSeats) { this.totalSeats = totalSeats; }
     public void setAvailableSeats(Integer availableSeats) { this.availableSeats = availableSeats; }
     public void setVersion(Long version) { this.version = version; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+    public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
 }

@@ -48,6 +48,15 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
 
+  ml-service:
+    build:
+      context: ../ml-service
+      dockerfile: Dockerfile
+    container_name: ticket-ml-service
+    ports:
+      - "8001:8001"
+    restart: always
+
 volumes:
   mysql_data:
 

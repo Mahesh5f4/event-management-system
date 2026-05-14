@@ -1,8 +1,10 @@
 package com.EventmanagementbyMahesh.event.events.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class EventResponse {
+public class EventResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
     public Long id;
     public String title;
     public String description;
