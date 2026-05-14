@@ -29,7 +29,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
-    @Value("${google.client.id}")
+    @Value("${google.client.id:}")
     private String googleClientId;
 
     public AuthService(UserRepository repo,
