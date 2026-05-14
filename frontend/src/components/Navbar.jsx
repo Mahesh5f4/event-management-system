@@ -1,158 +1,131 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
-import { LogOut, Ticket, Menu, X, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import Button from './ui/Button';
+import { Infinity, Menu, X, LogOut, User } from 'lucide-react';
+import { useState, useCallback, useMemo, memo } from 'react';
 
 const Navbar = () => {
   const { user } = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location]);
-
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     dispatch(logout());
     navigate('/login');
-  };
+  }, [dispatch, navigate]);
 
-  const navLinks = [
-    { to: '/', label: 'Discover' },
-    { to: '/bookings', label: 'My Tickets', private: true },
-    { to: '/admin', label: 'Manage', admin: true },
-  ];
+  const navLinks = useMemo(() => [
+    { label: 'Discover', to: '/' },
+    { label: 'My Tickets', to: '/bookings', private: true },
+    { label: 'Admin', to: '/admin', admin: true },
+  ], []);
 
   return (
-    <nav className={`fixed top-0 z-[100] w-full transition-all duration-300 border-b ${scrolled ? 'bg-slate-950/80 backdrop-blur-md border-slate-800 py-3' : 'bg-transparent border-transparent py-5'}`}>
-      <div className="container-custom flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <Ticket size={22} className="text-white" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-white">
-            Event<span className="text-indigo-500">Sphere</span>
-          </span>
-        </Link>
+    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transform-gpu antialiased">
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-2 text-white font-medium z-50">
+        <Infinity size={24} strokeWidth={1.5} />
+        <span className="tracking-tight text-lg">Equilibrium</span>
+      </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
-          <div className="flex items-center gap-6 pr-8 border-r border-slate-800">
-            {navLinks.map((link) => {
-              if (link.private && !user) return null;
-              if (link.admin && user?.role !== 'ADMIN') return null;
-              const isActive = location.pathname === link.to;
-              return (
-                <Link 
-                  key={link.to} 
-                  to={link.to} 
-                  className={`text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-5">
-            {user ? (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                  <div className="w-6 h-6 rounded-md bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                    <User size={14} />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-300">{user.name || user.email?.split('@')[0]}</span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut size={18} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-6">
-                <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
-                  Login
-                </Link>
-                <Link to="/register">
-                  <Button className="btn-primary py-2 px-5 text-sm rounded-lg">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden p-2 text-slate-400 hover:text-white"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+      {/* Desktop Navigation */}
+      <div className="hidden md:flex liquid-glass items-center gap-1 rounded-xl px-2 py-2 transform-gpu">
+        {navLinks.map((link) => {
+          if (link.private && !user) return null;
+          if (link.admin && user?.role !== 'ADMIN') return null;
+          const isActive = location.pathname === link.to;
+          return (
+            <Link 
+              key={link.label}
+              to={link.to}
+              className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Mobile Navigation */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-900 border-b border-slate-800 overflow-hidden"
-          >
-            <div className="container-custom py-6 flex flex-col gap-5">
-              {navLinks.map((link) => {
-                if (link.private && !user) return null;
-                if (link.admin && user?.role !== 'ADMIN') return null;
-                return (
-                  <Link 
-                    key={link.to} 
-                    to={link.to} 
-                    className="text-base font-medium text-slate-400 hover:text-white py-2"
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <div className="pt-4 border-t border-slate-800 flex flex-col gap-4">
-                {user ? (
-                  <Button onClick={handleLogout} className="btn-secondary w-full py-3">
-                    Logout
-                  </Button>
+      {/* User Actions */}
+      <div className="hidden md:flex items-center gap-4">
+        {user ? (
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/profile" 
+              className="flex items-center gap-3 px-3 py-1.5 rounded-xl liquid-glass hover:bg-white/10 transition-all border border-transparent hover:border-white/5 group transform-gpu"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 group-hover:text-white transition-colors overflow-hidden">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                 ) : (
-                  <>
-                    <Link to="/login" className="w-full">
-                      <Button className="btn-secondary w-full py-3">Login</Button>
-                    </Link>
-                    <Link to="/register" className="w-full">
-                      <Button className="btn-primary w-full py-3">Sign Up</Button>
-                    </Link>
-                  </>
+                  <User size={16} />
                 )}
               </div>
-            </div>
-          </motion.div>
+              <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest group-hover:text-white transition-colors">
+                {user.name || user.email?.split('@')[0] || 'User'}
+              </span>
+            </Link>
+            <button 
+              onClick={handleLogout}
+              className="p-2 rounded-xl liquid-glass text-white/40 hover:text-white transition-all transform-gpu"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link to="/login" className="text-white/60 hover:text-white text-sm font-medium px-4 py-2">
+              Log in
+            </Link>
+            <Link to="/register" className="bg-white text-black text-sm font-medium px-5 py-2 rounded-full hover:bg-white/90 transition-all">
+              Sign Up
+            </Link>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
+
+      {/* Mobile Toggle */}
+      <button 
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="md:hidden p-2 rounded-xl liquid-glass text-white z-50 transform-gpu"
+      >
+        {menuOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className="absolute top-20 left-6 right-6 z-40 md:hidden liquid-glass rounded-2xl p-4 flex flex-col gap-2 transform-gpu">
+          {navLinks.map((link) => {
+            if (link.private && !user) return null;
+            if (link.admin && user?.role !== 'ADMIN') return null;
+            const isActive = location.pathname === link.to;
+            return (
+              <Link 
+                key={link.label}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className={`px-4 py-3 rounded-xl text-sm transition-all ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+          {!user && (
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/5">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="text-center py-3 rounded-xl liquid-glass text-white text-sm font-medium">
+                Log in
+              </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="text-center py-3 rounded-xl bg-white text-black text-sm font-medium">
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   );
 };
 
-export default Navbar;
+export default memo(Navbar);

@@ -1,114 +1,117 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { register } from '../store/slices/authSlice';
+import { register, googleLogin, clearError } from '../store/slices/authSlice';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, Mail, Lock, UserPlus, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { GoogleLogin as GoogleLoginButton } from '@react-oauth/google';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [status, setStatus] = useState({ type: '', message: '' });
-  
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading } = useAppSelector(state => state.auth);
+  const { user, loading, error } = useAppSelector(state => state.auth);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (user) navigate('/');
+    return () => dispatch(clearError());
+  }, [user, navigate, dispatch]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setStatus({ type: '', message: '' });
-    try {
-      const resultAction = await dispatch(register(formData));
-      if (register.fulfilled.match(resultAction)) {
-        setStatus({ type: 'success', message: 'Account created! Redirecting to login...' });
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        setStatus({ type: 'error', message: resultAction.payload || 'Registration failed.' });
-      }
-    } catch (err) {
-      setStatus({ type: 'error', message: 'An unexpected error occurred.' });
-    }
+    dispatch(register(formData));
+  };
+
+  const handleGoogleSuccess = (credentialResponse) => {
+    dispatch(googleLogin(credentialResponse.credential));
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-32 bg-slate-950 relative overflow-hidden">
-      {/* Subtle Background Elements */}
-      <div className="absolute top-1/4 -right-1/4 w-1/2 h-1/2 bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-sky-500/5 blur-[120px] rounded-full pointer-events-none" />
-
+    <div className="min-h-[80vh] flex items-center justify-center px-4">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[480px] relative z-10"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="liquid-glass w-full max-w-md bg-white/5 p-8 sm:p-10 rounded-[2.5rem] shadow-2xl"
       >
-        <div className="premium-card p-8 md:p-10">
-          <div className="mb-10 text-center md:text-left">
-            <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 mb-6 mx-auto md:mx-0">
-              <UserPlus size={24} />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Create an account</h1>
-            <p className="text-slate-400">Join our community for exclusive event access</p>
+        <div className="flex flex-col items-center text-center mb-10">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-white/10">
+            <UserPlus size={32} className="text-black" />
           </div>
+          <h2 className="text-3xl font-medium text-white mb-2">Join Us</h2>
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Create your account</p>
+        </div>
 
-          {status.message && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`mb-8 p-4 rounded-xl border flex items-center gap-3 text-sm font-medium ${
-                status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-              }`}
-            >
-              {status.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-              <span>{status.message}</span>
-            </motion.div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <Input
+            label="Full Name"
+            type="text"
+            placeholder="John Doe"
+            icon={User}
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="name@example.com"
+            icon={Mail}
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            icon={Lock}
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
+              {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input 
-              label="Full Name"
-              type="text" 
-              required 
-              icon={User}
-              placeholder="Jane Doe"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
+          <Button 
+            type="submit" 
+            className="w-full py-4 text-base mt-4" 
+            loading={loading}
+          >
+            Create Account <ArrowRight size={18} className="ml-2" />
+          </Button>
+        </form>
 
-            <Input 
-              label="Work Email"
-              type="email" 
-              required 
-              icon={Mail}
-              placeholder="jane@company.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
+        <div className="my-8 flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/5" />
+          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">or</span>
+          <div className="h-px flex-1 bg-white/5" />
+        </div>
 
-            <Input 
-              label="Password"
-              type="password" 
-              required 
-              icon={Lock}
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+        <div className="flex justify-center">
+           <div className="liquid-glass p-1 rounded-xl w-full">
+              <GoogleLoginButton
+                onSuccess={handleGoogleSuccess}
+                onError={() => console.log('Login Failed')}
+                theme="filled_black"
+                shape="pill"
+                width="100%"
+                text="signup_with"
+              />
+           </div>
+        </div>
 
-            <div className="flex items-start gap-3 p-4 bg-slate-900/50 rounded-xl border border-slate-800 mb-4">
-               <ShieldCheck size={20} className="text-indigo-400 mt-0.5 shrink-0" />
-               <p className="text-xs text-slate-500 leading-relaxed">
-                 By joining, you agree to our <Link to="#" className="text-white hover:underline">Terms</Link> and <Link to="#" className="text-white hover:underline">Privacy Policy</Link>.
-               </p>
-            </div>
-
-            <Button type="submit" loading={loading} className="btn-primary w-full py-4 text-base">
-              Get Started <ArrowRight size={18} className="ml-2" />
-            </Button>
-          </form>
-
-          <p className="text-center text-slate-500 text-sm mt-10">
-            Already have an account? <Link to="/login" className="text-white font-semibold hover:text-indigo-400 transition-colors">Sign in</Link>
+        <div className="mt-10 pt-8 border-t border-white/5 text-center">
+          <p className="text-white/40 text-sm">
+            Already have an account?{' '}
+            <Link to="/login" className="text-white font-medium hover:underline">
+              Log in instead
+            </Link>
           </p>
         </div>
       </motion.div>

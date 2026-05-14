@@ -1,19 +1,31 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy, memo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from './store/hooks';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import EventDetails from './pages/EventDetails';
-import MyBookings from './pages/MyBookings';
-import CreateEvent from './pages/CreateEvent';
-import Payment from './pages/Payment';
-import Success from './pages/Success';
-import AdminAnalytics from './pages/admin/Analytics';
-import AdminDashboard from './pages/AdminDashboard';
 import { AnimatePresence } from 'framer-motion';
+
+// Lazy load pages
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const EventDetails = lazy(() => import('./pages/EventDetails'));
+const MyBookings = lazy(() => import('./pages/MyBookings'));
+const CreateEvent = lazy(() => import('./pages/CreateEvent'));
+const Payment = lazy(() => import('./pages/Payment'));
+const Success = lazy(() => import('./pages/Success'));
+const Profile = lazy(() => import('./pages/Profile'));
+const AdminAnalytics = lazy(() => import('./pages/admin/Analytics'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const About = lazy(() => import('./pages/About'));
+const Help = lazy(() => import('./pages/Help'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Security = lazy(() => import('./pages/Security'));
+const Legal = lazy(() => import('./pages/Legal'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+
+const BG_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260511_230229_7c9bc431-46cf-489a-948d-e8144d8eb5d4.mp4';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -29,7 +41,7 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-black">
-      <div className="premium-loader"></div>
+      <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
     </div>
   );
 
@@ -39,93 +51,164 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
-function App() {
-  const theme = useAppSelector(state => state.ui.theme);
+const VideoBackground = memo(() => (
+  <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+    <video 
+      className="w-full h-full object-cover opacity-60 will-change-transform"
+      autoPlay 
+      muted 
+      loop 
+      playsInline 
+      src={BG_VIDEO} 
+    />
+    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transform-gpu" />
+  </div>
+));
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+VideoBackground.displayName = 'VideoBackground';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-6 text-center">
+          <h2 className="text-3xl font-medium mb-4">Something went wrong</h2>
+          <p className="text-white/40 mb-8 max-w-md">We encountered an unexpected error. Please try refreshing the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-white/90 transition-all"
+          >
+            Refresh Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-transparent">
+    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+  </div>
+);
+
+function App() {
+  const location = useLocation();
 
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="relative min-h-screen bg-black text-white selection:bg-primary/30 selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-black text-white selection:bg-white/20 overflow-x-hidden font-sans antialiased">
+      <VideoBackground />
+      <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
 
-        <main className="relative z-10">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/event/:id" element={<EventDetails />} />
+        <main className="flex-1 pt-20">
+          <Suspense fallback={<LoadingFallback />}>
+            <AnimatePresence mode="wait">
+              <ErrorBoundary>
+                <Routes location={location} key={location.pathname}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/event/:id" element={<EventDetails />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/help" element={<Help />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/security" element={<Security />} />
+                  <Route path="/legal" element={<Legal />} />
 
-              <Route
-                path="/payment/:eventId"
-                element={
-                  <PrivateRoute>
-                    <Payment />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/success/:bookingId"
-                element={
-                  <PrivateRoute>
-                    <Success />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/bookings"
-                element={
-                  <PrivateRoute>
-                    <MyBookings />
-                  </PrivateRoute>
-                }
-              />
+                  <Route
+                    path="/profile"
+                    element={
+                      <PrivateRoute>
+                        <Profile />
+                      </PrivateRoute>
+                    }
+                  />
 
-              {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <PrivateRoute adminOnly>
-                    <AdminDashboard />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics"
-                element={
-                  <PrivateRoute adminOnly>
-                    <AdminAnalytics />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin/create"
-                element={
-                  <PrivateRoute adminOnly>
-                    <CreateEvent />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/create-event"
-                element={
-                  <PrivateRoute adminOnly>
-                    <CreateEvent />
-                  </PrivateRoute>
-                }
-              />
-            </Routes>
-          </AnimatePresence>
+                  <Route
+                    path="/payment/:eventId"
+                    element={
+                      <PrivateRoute>
+                        <Payment />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/success/:bookingId"
+                    element={
+                      <PrivateRoute>
+                        <Success />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/bookings"
+                    element={
+                      <PrivateRoute>
+                        <MyBookings />
+                      </PrivateRoute>
+                    }
+                  />
+
+                  {/* Admin Routes */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <PrivateRoute adminOnly>
+                        <AdminDashboard />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/analytics"
+                    element={
+                      <PrivateRoute adminOnly>
+                        <AdminAnalytics />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/create"
+                    element={
+                      <PrivateRoute adminOnly>
+                        <CreateEvent />
+                      </PrivateRoute>
+                    }
+                  />
+                </Routes>
+              </ErrorBoundary>
+            </AnimatePresence>
+          </Suspense>
         </main>
 
         <Footer />
       </div>
-    </Router>
+    </div>
   );
 }
 
-export default App;
+const AppWrapper = () => (
+  <Router>
+    <ScrollToTop />
+    <App />
+  </Router>
+);
+
+export default AppWrapper;

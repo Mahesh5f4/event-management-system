@@ -2,10 +2,10 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:latest
     container_name: ticket-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: MaheshDatabase
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-MaheshDatabase}
       MYSQL_DATABASE: ticketbooking
     ports:
       - "3308:3306"
@@ -34,7 +34,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
     depends_on:
       - prometheus
 

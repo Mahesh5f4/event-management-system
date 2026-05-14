@@ -6,6 +6,7 @@ const initialState = {
   token: localStorage.getItem('token') || null,
   loading: false,
   error: null,
+  tempEmail: null,
 };
 
 export const login = createAsyncThunk(
@@ -17,8 +18,18 @@ export const login = createAsyncThunk(
       // Based on my previous view, it's ResponseEntity.ok(service.login(req))
       const data = response.data;
       
+      if (data.requires2FA) {
+        return { requires2FA: true, email: data.email };
+      }
+
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({ email: data.email, role: data.role }));
+      localStorage.setItem('user', JSON.stringify({ 
+        email: data.email, 
+        role: data.role,
+        name: data.name,
+        avatarUrl: data.avatarUrl,
+        createdAt: data.createdAt
+      }));
       
       return data;
     } catch (err) {
@@ -35,6 +46,52 @@ export const register = createAsyncThunk(
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (idToken, { rejectWithValue }) => {
+    try {
+      const response = await authService.googleLogin({ credential: idToken });
+      const data = response.data;
+      
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({ 
+        email: data.email, 
+        role: data.role,
+        name: data.name,
+        avatarUrl: data.avatarUrl,
+        createdAt: data.createdAt
+      }));
+      
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Google Login failed');
+    }
+  }
+);
+
+export const verifyOtp = createAsyncThunk(
+  'auth/verifyOtp',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.verifyOtp(payload);
+      const data = response.data;
+      
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({ 
+        email: data.email, 
+        role: data.role,
+        name: data.name,
+        avatarUrl: data.avatarUrl,
+        createdAt: data.createdAt
+      }));
+      
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Invalid OTP');
     }
   }
 );
@@ -61,10 +118,61 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.token = action.payload.token;
-        state.user = { email: action.payload.email, role: action.payload.role };
+        if (action.payload.requires2FA) {
+          state.user = null;
+          state.token = null;
+          state.tempEmail = action.payload.email;
+        } else {
+          state.token = action.payload.token;
+          state.user = { 
+            email: action.payload.email, 
+            role: action.payload.role,
+            name: action.payload.name,
+            avatarUrl: action.payload.avatarUrl,
+            createdAt: action.payload.createdAt
+          };
+        }
       })
       .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token;
+        state.user = { 
+          email: action.payload.email, 
+          role: action.payload.role,
+          name: action.payload.name,
+          avatarUrl: action.payload.avatarUrl,
+          createdAt: action.payload.createdAt
+        };
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(verifyOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token;
+        state.user = { 
+          email: action.payload.email, 
+          role: action.payload.role,
+          name: action.payload.name,
+          avatarUrl: action.payload.avatarUrl,
+          createdAt: action.payload.createdAt
+        };
+        state.tempEmail = null;
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

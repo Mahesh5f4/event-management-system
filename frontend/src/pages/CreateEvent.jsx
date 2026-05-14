@@ -49,32 +49,23 @@ const CreateEvent = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl relative">
-       {/* Background Decor */}
-       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[400px] bg-primary/5 blur-[100px] rounded-full -z-10" />
-
-      <motion.button 
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
+    <div className="container mx-auto px-6 py-16 max-w-3xl">
+      <button 
         onClick={() => navigate(-1)} 
-        className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-10 font-bold group"
+        className="flex items-center gap-2 text-white/40 hover:text-white transition-all mb-10 text-xs font-bold uppercase tracking-widest"
       >
-        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
-        Back to Dashboard
-      </motion.button>
+        <ArrowLeft size={16} /> 
+        Back
+      </button>
 
-      <Card className="p-10 md:p-16 border-white/5 bg-surface/60 backdrop-blur-2xl" hover={false}>
+      <Card className="p-10 md:p-16">
         <div className="flex flex-col md:flex-row md:items-center gap-8 mb-12 border-b border-white/5 pb-12">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary shadow-xl shadow-primary/10 border border-primary/20">
-            <PlusCircle size={40} />
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-black">
+            <PlusCircle size={32} />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2">
-               <Badge variant="primary" className="px-3 py-1 font-black text-[10px] uppercase tracking-widest">Creator Mode</Badge>
-               <Sparkles size={14} className="text-primary animate-pulse" />
-            </div>
-            <h1 className="text-4xl font-black text-white tracking-tight">Host an <span className="text-gradient">Experience</span></h1>
-            <p className="text-slate-400 font-medium mt-1">Publish a new event to the global catalog</p>
+            <h1 className="text-4xl font-medium text-white tracking-tight">Host Experience</h1>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Publish to global catalog</p>
           </div>
         </div>
 
@@ -83,68 +74,64 @@ const CreateEvent = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className={`mb-10 p-5 rounded-2xl border flex items-center gap-4 ${
-              status.type === 'success' ? 'bg-accent/10 border-accent/20 text-accent' : 'bg-danger/10 border-danger/20 text-danger'
+              status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
             }`}
           >
-            {status.type === 'success' ? <CheckCircle size={24} /> : <AlertCircle size={24} />}
-            <span className="font-bold">{status.message}</span>
+            {status.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+            <span className="text-sm font-medium">{status.message}</span>
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-10">
-          <div className="grid grid-cols-1 gap-10">
-            <Input 
-              label="Event Title"
-              icon={Tag}
-              required
-              placeholder="e.g. Next-Gen AI Summit 2026"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            />
+          <Input 
+            label="Experience Title"
+            icon={Tag}
+            required
+            placeholder="AI Summit 2026"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          />
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-400 ml-1 flex items-center gap-2">
-                <Info size={14} /> Comprehensive Description
-              </label>
-              <textarea 
-                required 
-                className="premium-input min-h-[160px] resize-none"
-                placeholder="What makes this experience iconic? Detail the agenda, speakers, and atmosphere..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-white/40 uppercase tracking-widest ml-1">Description</label>
+            <textarea 
+              required 
+              className="liquid-glass w-full bg-white/5 text-white px-5 py-4 rounded-2xl outline-none focus:bg-white/10 transition-all placeholder:text-white/20 text-sm min-h-[160px] resize-none"
+              placeholder="Detail the agenda and atmosphere..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Input 
-              label="Venue / Location"
+              label="Venue"
               icon={MapPin}
               required
-              placeholder="e.g. Silicon Valley Center"
+              placeholder="San Francisco, CA"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             />
             <Input 
-              label="Admission Price (₹)"
+              label="Price (₹)"
               type="number" 
               required
-              placeholder="0.00"
+              placeholder="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Input 
-              label="Event Starts"
+              label="Start"
               type="datetime-local" 
               required
               value={formData.startTime}
               onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
             />
             <Input 
-              label="Event Ends"
+              label="End"
               type="datetime-local" 
               required
               value={formData.endTime}
@@ -152,55 +139,40 @@ const CreateEvent = () => {
             />
           </div>
 
-          <div className="space-y-6">
-            <Input 
-              label="Cover Image URL"
-              icon={ImageIcon}
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-            />
-            {formData.imageUrl && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }} 
-                animate={{ opacity: 1, scale: 1 }}
-                className="aspect-video w-full rounded-[32px] overflow-hidden border border-white/10 shadow-2xl relative group"
-              >
-                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" 
-                  onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Badge variant="primary">Preview Mode Active</Badge>
-                </div>
-              </motion.div>
-            )}
-          </div>
+          <Input 
+            label="Image URL"
+            icon={ImageIcon}
+            type="url"
+            placeholder="https://..."
+            value={formData.imageUrl}
+            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+          />
 
           <Input 
             label="Total Capacity"
-            icon={Users}
+            icon={Calendar}
             type="number" 
             required
-            placeholder="e.g. 500"
+            placeholder="500"
             value={formData.totalSeats}
             onChange={(e) => setFormData({ ...formData, totalSeats: e.target.value })}
           />
 
-          <div className="pt-10 border-t border-white/5 flex gap-6">
+          <div className="pt-10 border-t border-white/5 flex gap-4">
             <Button 
               type="button" 
-              variant="outline" 
+              variant="secondary" 
               onClick={() => navigate(-1)}
-              className="flex-1 py-4"
+              className="flex-1"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               loading={loading}
-              className="flex-[2] py-4 text-lg font-black italic tracking-tight"
+              className="flex-[2]"
             >
-              Publish Experience <ArrowRight className="ml-2" />
+              Publish <ArrowRight size={18} className="ml-2" />
             </Button>
           </div>
         </form>

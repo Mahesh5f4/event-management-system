@@ -1,87 +1,71 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary: #4f46e5;
-  /* Indigo 600 */
-  --primary-hover: #4338ca;
-  --secondary: #0ea5e9;
-  /* Sky 500 */
-  --background: #020617;
-  /* Slate 950 */
-  --surface: #0f172a;
-  /* Slate 900 */
-  --border: #1e293b;
-  /* Slate 800 */
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --ring: rgba(79, 70, 229, 0.4);
-}
-
 @layer base {
-  body {
-    @apply bg-background text-text-main antialiased selection:bg-primary/30 selection:text-white overflow-x-hidden;
-    font-family: 'Inter', sans-serif;
+  * {
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply tracking-tight font-semibold;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+  body {
+    @apply bg-[#020202] text-white antialiased selection:bg-white/20;
   }
 }
 
 @layer components {
-  .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: none;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
   }
 
-  .glass-panel {
-    @apply bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-sm transition-all duration-300;
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.05) 40%,
+      rgba(255, 255, 255, 0) 50%,
+      rgba(255, 255, 255, 0.05) 60%,
+      rgba(255, 255, 255, 0.2)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
 
-  .premium-card {
-    @apply bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-sm hover:shadow-md hover:border-slate-700 transition-all duration-300;
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
   }
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all duration-200;
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  .btn-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all duration-200;
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
   }
 
-  .input-field {
-    @apply w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all duration-200;
-  }
-
-  .badge-indigo {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20;
-  }
-
-  /* Standard Transitions */
-  .transition-standard {
-    @apply transition-all duration-300 ease-in-out;
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-background;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-slate-800 rounded-full border-2 border-background hover:bg-slate-700;
+/* Custom Utilities */
+.text-gradient {
+  @apply bg-gradient-to-br from-white via-white to-white/40 bg-clip-text text-transparent;
 }

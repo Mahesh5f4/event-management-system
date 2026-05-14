@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { memo } from 'react';
 
 const Button = ({ 
   children, 
@@ -10,34 +10,31 @@ const Button = ({
   ...props 
 }) => {
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/20',
-    secondary: 'bg-secondary text-white hover:bg-secondary-hover shadow-lg shadow-secondary/20',
+    primary: 'bg-white text-black hover:bg-white/90',
+    secondary: 'liquid-glass text-white hover:bg-white/5',
     outline: 'border border-white/10 text-white hover:bg-white/5',
-    ghost: 'text-slate-400 hover:text-white hover:bg-white/5',
-    glass: 'bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10',
-    danger: 'bg-danger text-white hover:bg-danger-hover shadow-lg shadow-danger/20',
+    ghost: 'text-white/70 hover:text-white',
+    danger: 'bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm rounded-lg',
-    md: 'px-5 py-2.5 rounded-xl',
-    lg: 'px-8 py-4 text-lg rounded-2xl',
-    icon: 'p-2.5 rounded-xl',
+    sm: 'px-4 py-2 text-sm rounded-full',
+    md: 'px-6 py-3 text-base rounded-full',
+    lg: 'px-8 py-4 text-lg rounded-full',
+    icon: 'p-2.5 rounded-full',
   };
 
   return (
-    <motion.button
-      whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
-      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
-      className={`premium-button flex items-center justify-center gap-2 font-semibold ${variants[variant]} ${sizes[size]} ${className}`}
+    <button
+      className={`flex items-center justify-center gap-2 font-medium transition-all duration-300 transform-gpu ${variants[variant]} ${sizes[size]} ${className} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       disabled={disabled || loading}
       {...props}
     >
       {loading ? (
-        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
       ) : children}
-    </motion.button>
+    </button>
   );
 };
 
-export default Button;
+export default memo(Button);

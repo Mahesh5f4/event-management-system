@@ -7,6 +7,8 @@ backend/src/main/resources/application.properties
 backend/src/main/resources/application.yml
 backend/src/main/resources/application-*.properties
 backend/src/main/resources/application-*.yml
+backend/.env
+backend/.env.local
 
 # Frontend
 frontend/node_modules/

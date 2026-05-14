@@ -14,6 +14,7 @@ public class User {
     private Long id;
 
     private String name;
+    private String avatarUrl;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -25,6 +26,9 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(nullable = true, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     private String otp;
     private LocalDateTime otpExpiry;
@@ -39,9 +43,12 @@ public class User {
     public String getOtp() { return otp; }
     public LocalDateTime getOtpExpiry() { return otpExpiry; }
     public LocalDateTime getLastActive() { return lastActive; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setId(Long id) { this.id = id; }
     public void setName(String name) { this.name = name; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public void setEmail(String email) { this.email = email; }
     public void setPassword(String password) { this.password = password; }
     public void setRole(Role role) { this.role = role; }

@@ -1,17 +1,18 @@
+import { memo } from 'react';
+
 const Badge = ({ children, variant = 'primary', className = '' }) => {
   const variants = {
-    primary: 'bg-primary/10 text-primary border-primary/20',
-    secondary: 'bg-secondary/10 text-secondary border-secondary/20',
-    accent: 'bg-accent/10 text-accent border-accent/20',
-    danger: 'bg-danger/10 text-danger border-danger/20',
-    neutral: 'bg-white/5 text-slate-400 border-white/10',
+    primary: 'bg-white/10 text-white border-white/20',
+    secondary: 'bg-white/5 text-white/70 border-white/10',
+    danger: 'bg-red-500/10 text-red-500 border-red-500/20',
+    success: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
   };
 
   return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${variants[variant]} ${className}`}>
+    <span className={`liquid-glass px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${variants[variant]} ${className} transform-gpu`}>
       {children}
     </span>
   );
 };
 
-export default Badge;
+export default memo(Badge);

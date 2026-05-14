@@ -1,107 +1,101 @@
 import { Link } from 'react-router-dom';
-import { Ticket, Mail, Phone, MapPin, ArrowUpRight, Globe, ShieldCheck } from 'lucide-react';
+import { Infinity, Mail, Phone, MapPin, Globe, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
     navigation: [
-      { label: 'Discover Events', to: '/' },
-      { label: 'Global Summits', to: '#' },
-      { label: 'Ticket Pricing', to: '#' },
-      { label: 'Venue Partners', to: '#' },
-      { label: 'Upcoming Tours', to: '#' },
+      { label: 'Discover', to: '/' },
+      { label: 'About', to: '/about' },
+      { label: 'My Library', to: '/bookings' },
+      { label: 'Admin', to: '/admin' },
     ],
-    resources: [
-      { label: 'Help Center', to: '#' },
-      { label: 'Terms of Service', to: '#' },
-      { label: 'Privacy Policy', to: '#' },
-      { label: 'Cookie Settings', to: '#' },
-      { label: 'Security Protocol', to: '#' },
+    legal: [
+      { label: 'Legal Center', to: '/legal' },
+      { label: 'Terms', to: '/terms' },
+      { label: 'Privacy', to: '/privacy' },
+      { label: 'Security', to: '/security' },
+    ],
+    support: [
+      { label: 'Help', to: '/help' },
+      { label: 'Contact', to: 'mailto:mahesh20104@gmail.com' },
     ]
   };
 
   return (
-    <footer className="bg-slate-950 border-t border-slate-900 pt-24 pb-12 overflow-hidden relative">
-      {/* Background Decor */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[300px] bg-indigo-500/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
-
-      <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
+    <footer className="mt-20 px-6 pb-12 transform-gpu antialiased">
+      <div className="liquid-glass rounded-[3rem] p-12 md:p-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-16">
           {/* Brand Section */}
           <div className="lg:col-span-5 space-y-8">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                <Ticket size={24} className="text-white" />
-              </div>
-              <span className="text-2xl font-bold tracking-tight text-white uppercase">
-                Event<span className="text-indigo-500">Hub</span> <span className="text-xs text-slate-600 font-normal">PRO</span>
-              </span>
+            <Link to="/" className="flex items-center gap-2 text-white font-medium">
+              <Infinity size={32} strokeWidth={1.5} />
+              <span className="tracking-tight text-2xl italic">Equilibrium</span>
             </Link>
             
-            <p className="text-slate-500 text-lg leading-relaxed max-w-md font-light">
-              The world's leading platform for exclusive engineering summits, tech gatherings, and iconic cultural moments.
+            <p className="text-white/40 text-lg leading-relaxed max-w-sm">
+              The premier platform for exclusive gatherings, iconic cultural moments, and elite networking experiences.
             </p>
 
             <div className="flex gap-4">
-              {[Globe, Mail].map((Icon, i) => (
-                <button key={i} className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 hover:text-white hover:border-slate-700 transition-all">
-                  <Icon size={20} />
-                </button>
-              ))}
+               <a href="mailto:mahesh20104@gmail.com" className="w-10 h-10 rounded-xl liquid-glass flex items-center justify-center text-white/40 hover:text-white transition-all transform-gpu border border-white/5">
+                  <Mail size={20} />
+               </a>
+               <a href="https://github.com/Mahesh5f4" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl liquid-glass flex items-center justify-center text-white/40 hover:text-white transition-all transform-gpu border border-white/5">
+                  <Globe size={20} />
+               </a>
             </div>
           </div>
 
           {/* Links Sections */}
           <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-12">
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Navigation</h4>
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Navigation</h4>
               <ul className="space-y-4">
                 {footerLinks.navigation.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="text-slate-500 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center group">
+                    <Link to={link.to} className="text-white/40 hover:text-white transition-colors text-sm font-medium">
                       {link.label}
-                      <ArrowUpRight size={14} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Resources</h4>
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Legal</h4>
               <ul className="space-y-4">
-                {footerLinks.resources.map((link) => (
+                {footerLinks.legal.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="text-slate-500 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center group">
+                    <Link to={link.to} className="text-white/40 hover:text-white transition-colors text-sm font-medium">
                       {link.label}
-                      <ArrowUpRight size={14} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="space-y-6 col-span-2 md:col-span-1">
-              <h4 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Official Contact</h4>
-              <ul className="space-y-5">
-                <li className="flex items-start gap-3">
-                  <MapPin size={18} className="text-indigo-500 shrink-0 mt-0.5" />
-                  <div className="text-sm text-slate-500 font-medium leading-relaxed">
-                    Mahesh,<br />
-                    Srikakulam, AP, India
-                  </div>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Mail size={18} className="text-indigo-500 shrink-0" />
-                  <a href="mailto:mahesh20104@gmail.com" className="text-sm text-slate-500 hover:text-white font-medium transition-colors">
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Support</h4>
+              <ul className="space-y-4">
+                {footerLinks.support.map((link) => (
+                  <li key={link.label}>
+                    {link.to.startsWith('mailto:') ? (
+                      <a href={link.to} className="text-white/40 hover:text-white transition-colors text-sm font-medium">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link to={link.to} className="text-white/40 hover:text-white transition-colors text-sm font-medium">
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+                <li className="flex items-center gap-3 pt-4">
+                  <Mail size={16} className="text-white/20" />
+                  <a href="mailto:mahesh20104@gmail.com" className="text-xs text-white/40 hover:text-white truncate">
                     mahesh20104@gmail.com
-                  </a>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Phone size={18} className="text-indigo-500 shrink-0" />
-                  <a href="tel:+916281835791" className="text-sm text-slate-500 hover:text-white font-medium transition-colors">
-                    +91 6281835791
                   </a>
                 </li>
               </ul>
@@ -110,32 +104,31 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-12 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
-          <div className="space-y-2">
-            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">
-              © 2026 EVENTHUB PRO. All rights reserved.
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col gap-4">
+            <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest">
+              © {currentYear} EQUILIBRIUM. ALL RIGHTS RESERVED.
             </p>
-            <div className="flex items-center justify-center md:justify-start gap-4">
-               <div className="flex items-center gap-2 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Global System Status: Operational
+            <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2 text-emerald-500/60 text-[10px] font-bold uppercase tracking-widest">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40" />
+                  Systems: Optimal
                </div>
-               <div className="w-1 h-1 rounded-full bg-slate-800" />
-               <div className="flex items-center gap-2 text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-                  <Globe size={12} /> System Language: EN-US
+               <div className="w-1 h-1 rounded-full bg-white/5" />
+               <div className="flex items-center gap-2 text-white/20 text-[10px] font-bold uppercase tracking-widest">
+                  <Globe size={12} /> EN-US
                </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-             <div className="flex items-center gap-2 text-slate-700">
-                <ShieldCheck size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Protocol Secured</span>
+          <div className="flex items-center gap-8">
+             <div className="flex items-center gap-3 text-white/10">
+                <ShieldCheck size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">SSL Encrypted</span>
              </div>
-             <div className="w-px h-6 bg-slate-900" />
-             <div className="flex items-center gap-4">
-                <img src="https://img.icons8.com/color/48/visa.png" alt="Visa" className="h-4 grayscale hover:grayscale-0 transition-all opacity-30 hover:opacity-100" />
-                <img src="https://img.icons8.com/color/48/mastercard.png" alt="Mastercard" className="h-4 grayscale hover:grayscale-0 transition-all opacity-30 hover:opacity-100" />
+             <div className="flex items-center gap-6 opacity-20 grayscale">
+                <img src="https://img.icons8.com/color/48/visa.png" alt="Visa" className="h-4" />
+                <img src="https://img.icons8.com/color/48/mastercard.png" alt="Mastercard" className="h-6" />
              </div>
           </div>
         </div>

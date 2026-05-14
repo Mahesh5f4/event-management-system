@@ -1,18 +1,14 @@
-import { motion } from 'framer-motion';
+import { memo } from 'react';
 
-const Card = ({ children, className = '', hover = true, ...props }) => {
+const Card = ({ children, className = '', ...props }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      whileHover={hover ? { y: -5, transition: { duration: 0.2 } } : {}}
-      className={`glass-card p-6 rounded-2xl ${className}`}
+    <div
+      className={`liquid-glass bg-white/5 p-6 rounded-3xl transition-all duration-300 hover:bg-white/10 transform-gpu ${className}`}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
-export default Card;
+export default memo(Card);

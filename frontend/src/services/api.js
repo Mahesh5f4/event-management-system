@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -19,6 +19,8 @@ export const authService = {
   register: (userData) => api.post('/auth/register', userData),
   googleLogin: (payload) => api.post('/auth/google', payload),
   verifyOtp: (payload) => api.post('/auth/verify-otp', payload),
+  forgotPassword: (payload) => api.post('/auth/forgot-password', payload),
+  resetPassword: (payload) => api.post('/auth/reset-password', payload),
 };
 
 export const eventService = {

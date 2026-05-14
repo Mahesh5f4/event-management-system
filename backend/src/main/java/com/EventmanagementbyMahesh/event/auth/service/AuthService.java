@@ -7,6 +7,7 @@ import com.EventmanagementbyMahesh.event.auth.repository.UserRepository;
 import com.EventmanagementbyMahesh.event.auth.security.JwtUtil;
 import com.EventmanagementbyMahesh.event.common.exception.BadRequestException;
 import com.EventmanagementbyMahesh.event.common.exception.ResourceNotFoundException;
+import com.EventmanagementbyMahesh.event.common.exception.BaseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -66,7 +67,7 @@ public class AuthService {
         // Bypass 2FA for ADMIN
         if (user.getRole() == Role.ADMIN) {
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-            return new AuthResponse(token, user.getRole().name());
+            return new AuthResponse(token, user.getRole().name(), user.getEmail(), user.getName(), user.getAvatarUrl(), user.getCreatedAt());
         }
 
         // Generate OTP for regular users
@@ -104,7 +105,7 @@ public class AuthService {
         repo.save(user);
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-        return new AuthResponse(token, user.getRole().name());
+        return new AuthResponse(token, user.getRole().name(), user.getEmail(), user.getName(), user.getAvatarUrl(), user.getCreatedAt());
     }
 
     public AuthResponse loginWithGoogle(String credential) {
@@ -121,21 +122,71 @@ public class AuthService {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
             String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
 
             User user = repo.findByEmail(email).orElseGet(() -> {
                 User newUser = new User();
                 newUser.setEmail(email);
                 newUser.setName(name);
+                newUser.setAvatarUrl(picture);
                 newUser.setRole(Role.USER);
                 newUser.setPassword(encoder.encode(UUID.randomUUID().toString()));
                 return repo.save(newUser);
             });
 
+            // Update avatar if changed or missing
+            if (picture != null && !picture.equals(user.getAvatarUrl())) {
+                user.setAvatarUrl(picture);
+                repo.save(user);
+            }
+
             // Google login bypasses 2FA for convenience in this demo
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-            return new AuthResponse(token, user.getRole().name());
+            return new AuthResponse(token, user.getRole().name(), user.getEmail(), user.getName(), user.getAvatarUrl(), user.getCreatedAt());
         } catch (Exception e) {
             throw new RuntimeException("Google login failed: " + e.getMessage());
         }
+    }
+
+    public void forgotPassword(ForgotPasswordRequest req) {
+        try {
+            if (req == null || req.getEmail() == null) {
+                throw new BadRequestException("Email is required");
+            }
+            User user = repo.findByEmail(req.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("User with email " + req.getEmail() + " not found"));
+
+            String otp = String.format("%06d", new Random().nextInt(999999));
+            user.setOtp(otp);
+            user.setOtpExpiry(LocalDateTime.now().plusMinutes(10)); // 10 minutes for password reset
+            repo.save(user);
+
+            try {
+                emailService.sendOtpEmail(user.getEmail(), otp);
+            } catch (Exception e) {
+                System.err.println("Failed to send Reset OTP: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            if (e instanceof BaseException) throw e;
+            throw new BadRequestException("Internal Debug Error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    public void resetPassword(ResetPasswordRequest req) {
+        User user = repo.findByEmail(req.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User with email " + req.getEmail() + " not found"));
+
+        if (user.getOtp() == null || !user.getOtp().equals(req.getOtp())) {
+            throw new BadRequestException("Invalid OTP code");
+        }
+
+        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("OTP has expired. Please request a new one.");
+        }
+
+        user.setPassword(encoder.encode(req.getNewPassword()));
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        repo.save(user);
     }
 }
