@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -51,6 +51,7 @@ export const seatLockService = {
   unlock: (eventId, seatId) => api.post(`/seats/${eventId}/unlock`, { seatId }),
   unlockMultiple: (eventId, seatIds) => api.post(`/seats/${eventId}/unlock-multiple`, { seatIds }),
   getLocked: (eventId) => api.get(`/seats/${eventId}/locked`),
+  getMyLocks: (eventId) => api.get(`/seats/${eventId}/my-locks`),
 };
 
 export default api;

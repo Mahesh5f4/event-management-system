@@ -86,4 +86,14 @@ public class SeatLockController {
         List<String> lockedSeats = seatLockService.getLockedSeats(eventId);
         return ResponseEntity.ok(ApiResponse.ok(lockedSeats, "Fetched all currently locked seats"));
     }
+
+    @GetMapping("/{eventId}/my-locks")
+    public ResponseEntity<ApiResponse<List<String>>> getMyLockedSeats(
+            Authentication auth,
+            @PathVariable Long eventId) {
+        if (auth == null) return ResponseEntity.ok(ApiResponse.ok(List.of(), "Not authenticated"));
+        String userId = auth.getName();
+        List<String> myLockedSeats = seatLockService.getSeatsLockedByUser(eventId, userId);
+        return ResponseEntity.ok(ApiResponse.ok(myLockedSeats, "Fetched your locked seats"));
+    }
 }

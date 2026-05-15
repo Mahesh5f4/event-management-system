@@ -30,11 +30,7 @@ spring:
   
   data:
     redis:
-      host: ${SPRING_REDIS_HOST:localhost}
-      port: ${SPRING_REDIS_PORT:6379}
-      password: ${SPRING_REDIS_PASSWORD:}
-      ssl:
-        enabled: true # Hardcoded to true for Upstash to prevent boolean parsing errors
+      url: ${SPRING_REDIS_URL:redis://localhost:6379}
   
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}

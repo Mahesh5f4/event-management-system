@@ -10,11 +10,14 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "mysecretkeymysecretkeymysecretkey123456";
-    private final long EXPIRATION = 86400000; // 24 hours
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:mysecretkeymysecretkeymysecretkey123456}")
+    private String secret;
+
+    @org.springframework.beans.factory.annotation.Value("${JWT_EXPIRATION:86400000}")
+    private long expiration;
 
     private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String email, String role) {
@@ -22,7 +25,7 @@ public class JwtUtil {
                 .setSubject(email)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
                 .compact();
     }

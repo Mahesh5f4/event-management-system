@@ -8,10 +8,13 @@ import com.EventmanagementbyMahesh.event.auth.security.JwtUtil;
 import com.EventmanagementbyMahesh.event.common.exception.BadRequestException;
 import com.EventmanagementbyMahesh.event.common.exception.ResourceNotFoundException;
 import com.EventmanagementbyMahesh.event.common.exception.BaseException;
+import com.EventmanagementbyMahesh.event.common.exception.UnauthorizedException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.UUID;
 @Service
 public class AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private final UserRepository repo;
     private final PasswordEncoder encoder;
     private final JwtUtil jwtUtil;
@@ -81,7 +85,7 @@ public class AuthService {
         try {
             emailService.sendOtpEmail(user.getEmail(), otp);
         } catch (Exception e) {
-            System.err.println("Failed to send OTP: " + e.getMessage());
+            logger.error("Failed to send OTP to {}: {}", user.getEmail(), e.getMessage());
         }
 
         return new AuthResponse(true, user.getEmail());
@@ -144,7 +148,8 @@ public class AuthService {
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
             return new AuthResponse(token, user.getRole().name(), user.getEmail(), user.getName(), user.getAvatarUrl(), user.getCreatedAt());
         } catch (Exception e) {
-            throw new RuntimeException("Google login failed: " + e.getMessage());
+            logger.error("Google login failed for token: {}", e.getMessage());
+            throw new UnauthorizedException("Authentication with Google failed");
         }
     }
 
@@ -164,11 +169,12 @@ public class AuthService {
             try {
                 emailService.sendOtpEmail(user.getEmail(), otp);
             } catch (Exception e) {
-                System.err.println("Failed to send Reset OTP: " + e.getMessage());
+                logger.error("Failed to send Reset OTP to {}: {}", user.getEmail(), e.getMessage());
             }
         } catch (Exception e) {
-            if (e instanceof BaseException) throw e;
-            throw new BadRequestException("Internal Debug Error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            if (e instanceof BaseException) throw (BaseException) e;
+            logger.error("Error in forgotPassword flow: ", e);
+            throw new BadRequestException("Could not process forgot password request. Please try again later.");
         }
     }
 

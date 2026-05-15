@@ -5,12 +5,15 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
     
     @Value("${spring.mail.from:mahesh20104@gmail.com}")
@@ -68,7 +71,7 @@ public class EmailService {
             helper.setText(content, true);
             mailSender.send(message);
         } catch (MessagingException e) {
-            System.err.println("Failed to send email: " + e.getMessage());
+            logger.error("Failed to send booking confirmation email to {}: {}", to, e.getMessage());
         }
     }
 }

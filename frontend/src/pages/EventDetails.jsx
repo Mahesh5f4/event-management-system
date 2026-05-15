@@ -41,8 +41,8 @@ const SeatMap = memo(({ total, rows, cols, bookedSeats, lockedByOthers, selected
 
           const seatId = `${String.fromCharCode(65 + rowIndex)}${colIndex + 1}`;
           const isBooked = bookedSeats.includes(seatId);
-          const isLocked = lockedByOthers.includes(seatId);
           const isSelected = selectedSeats.includes(seatId);
+          const isLocked = lockedByOthers.includes(seatId) && !isSelected;
 
           return (
             <Seat
@@ -131,6 +131,11 @@ const EventDetails = () => {
         ]);
         setLockedByOthers(lockedResp.data.data);
         setBookedSeats(bookedResp.data.data);
+
+        if (user) {
+          const myLocksResp = await seatLockService.getMyLocks(id);
+          setSelectedSeats(myLocksResp.data.data);
+        }
       } catch (err) {
         console.error('Error fetching seat data:', err);
       }
@@ -139,7 +144,7 @@ const EventDetails = () => {
 
     // WebSocket Connection
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('/ws-booking'),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || '/ws-booking'),
       onConnect: () => {
         if (user) {
           stompClient.publish({
