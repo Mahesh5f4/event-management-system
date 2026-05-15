@@ -102,7 +102,7 @@ const EventDetails = () => {
 
   useEffect(() => {
     dispatch(fetchEventById(id));
-    
+
     const fetchRecommendations = async () => {
       try {
         const resp = await eventService.getRecommendations(id);
@@ -144,7 +144,7 @@ const EventDetails = () => {
 
     // WebSocket Connection
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || '/api/ws-booking'),
+      webSocketFactory: () => new SockJS('/ws-booking'),
       onConnect: () => {
         if (user) {
           stompClient.publish({
@@ -284,8 +284,8 @@ const EventDetails = () => {
                           key={n}
                           onClick={() => setTicketQuantity(n)}
                           className={`w-12 h-12 rounded-2xl font-bold text-sm transition-all duration-300 ${ticketQuantity === n
-                              ? 'bg-white text-black scale-105 shadow-xl shadow-white/10'
-                              : 'bg-white/5 text-white/40 hover:text-white border border-white/5'
+                            ? 'bg-white text-black scale-105 shadow-xl shadow-white/10'
+                            : 'bg-white/5 text-white/40 hover:text-white border border-white/5'
                             }`}
                         >
                           {n}
@@ -344,7 +344,7 @@ const EventDetails = () => {
                         <p className="text-white/60 leading-relaxed text-sm font-light italic">"{review.comment}"</p>
                         {review.imageUrl && (
                           <div className="relative rounded-2xl overflow-hidden aspect-video w-48 border border-white/10 mt-4 group-hover:scale-105 transition-transform duration-500">
-                             <img src={review.imageUrl} alt="Review" className="w-full h-full object-cover" />
+                            <img src={review.imageUrl} alt="Review" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </Card>
@@ -442,17 +442,17 @@ const EventDetails = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {recommendations.map((rec) => (
-                      <Card 
-                        key={rec.id} 
+                      <Card
+                        key={rec.id}
                         className="group cursor-pointer overflow-hidden transform-gpu hover:bg-white/[0.07] transition-all duration-500"
                         onClick={() => {
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            navigate(`/event/${rec.id}`);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          navigate(`/event/${rec.id}`);
                         }}
                       >
                         <div className="aspect-video relative overflow-hidden">
-                          <img 
-                            src={rec.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600'} 
+                          <img
+                            src={rec.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600'}
                             alt={rec.title}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           />
@@ -477,7 +477,7 @@ const EventDetails = () => {
                               </span>
                             </div>
                             <div className="flex items-center gap-1 text-emerald-500">
-                                <span className="text-[10px] font-bold uppercase tracking-widest italic">AI Match</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest italic">AI Match</span>
                             </div>
                           </div>
                         </div>

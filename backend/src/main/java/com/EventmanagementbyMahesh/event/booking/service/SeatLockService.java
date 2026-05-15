@@ -20,42 +20,57 @@ public class SeatLockService {
     }
 
     public boolean lockSeat(Long eventId, String seatId, String userId) {
-        String key = LOCK_KEY_PREFIX + eventId + ":" + seatId;
-        // setIfAbsent acts as an atomic lock
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, userId, LOCK_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-        return success != null && success;
+        try {
+            String key = LOCK_KEY_PREFIX + eventId + ":" + seatId;
+            Boolean success = redisTemplate.opsForValue().setIfAbsent(key, userId, LOCK_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+            return success != null && success;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public void unlockSeat(Long eventId, String seatId) {
-        String key = LOCK_KEY_PREFIX + eventId + ":" + seatId;
-        redisTemplate.delete(key);
+        try {
+            String key = LOCK_KEY_PREFIX + eventId + ":" + seatId;
+            redisTemplate.delete(key);
+        } catch (Exception e) {}
     }
 
     public void unlockMultipleSeats(Long eventId, List<String> seatIds) {
-        List<String> keys = seatIds.stream()
-                .map(id -> LOCK_KEY_PREFIX + eventId + ":" + id)
-                .collect(Collectors.toList());
-        redisTemplate.delete(keys);
+        try {
+            List<String> keys = seatIds.stream()
+                    .map(id -> LOCK_KEY_PREFIX + eventId + ":" + id)
+                    .collect(Collectors.toList());
+            redisTemplate.delete(keys);
+        } catch (Exception e) {}
     }
 
     public List<String> getLockedSeats(Long eventId) {
-        String pattern = LOCK_KEY_PREFIX + eventId + ":*";
-        Set<String> keys = redisTemplate.keys(pattern);
-        if (keys == null || keys.isEmpty()) return List.of();
+        try {
+            String pattern = LOCK_KEY_PREFIX + eventId + ":*";
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys == null || keys.isEmpty()) return List.of();
 
-        return keys.stream()
-                .map(key -> key.substring(key.lastIndexOf(":") + 1))
-                .collect(Collectors.toList());
+            return keys.stream()
+                    .map(key -> key.substring(key.lastIndexOf(":") + 1))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     public List<String> getSeatsLockedByUser(Long eventId, String userId) {
-        String pattern = LOCK_KEY_PREFIX + eventId + ":*";
-        Set<String> keys = redisTemplate.keys(pattern);
-        if (keys == null || keys.isEmpty()) return List.of();
+        try {
+            String pattern = LOCK_KEY_PREFIX + eventId + ":*";
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys == null || keys.isEmpty()) return List.of();
 
-        return keys.stream()
-                .filter(key -> userId.equals(redisTemplate.opsForValue().get(key)))
-                .map(key -> key.substring(key.lastIndexOf(":") + 1))
-                .collect(Collectors.toList());
+            return keys.stream()
+                    .filter(key -> userId.equals(redisTemplate.opsForValue().get(key)))
+                    .map(key -> key.substring(key.lastIndexOf(":") + 1))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }
