@@ -144,7 +144,7 @@ const EventDetails = () => {
 
     // WebSocket Connection
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || '/ws-booking'),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || '/api/ws-booking'),
       onConnect: () => {
         if (user) {
           stompClient.publish({
