@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchEventById, clearCurrentEvent } from '../store/slices/eventsSlice';
-import { eventService, bookingService, seatLockService } from '../services/api';
+import { eventService, bookingService, seatLockService, API_BASE_URL } from '../services/api';
 import { MapPin, Calendar, Clock, Ticket, ArrowLeft, ArrowRight, ChevronRight, Star, MessageSquare, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Client } from '@stomp/stompjs';
@@ -144,7 +144,7 @@ const EventDetails = () => {
 
     // WebSocket Connection
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('/ws-booking'),
+      webSocketFactory: () => new SockJS(`${API_BASE_URL}/ws-booking`),
       onConnect: () => {
         if (user) {
           stompClient.publish({
