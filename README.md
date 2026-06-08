@@ -1,208 +1,363 @@
-# 🌌 EventHub: Distributed Event Booking Platform
+# 🎫 EventHub
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?style=flat&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
-[![Redis](https://img.shields.io/badge/Redis-Distributed%20Locking-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Async%20Processing-FF6600?style=flat&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
-
-## 1. Project Overview
-EventHub is a full-stack platform designed for high-availability event ticketing and inventory management. The system addresses the technical challenges of maintaining data consistency during high-contention booking windows through a multi-layered concurrency strategy.
-
-### Primary Use Cases
-*   **Inventory Reservation**: Synchronized seat selection across concurrent users.
-*   **Transactional Booking**: Atomic ticket issuance with integrated payment simulation.
-*   **Background Processing**: Offloading resource-intensive tasks (PDF generation, notifications) to message brokers.
+> A high-availability, microservices-based distributed event ticketing and inventory management platform engineered to handle massive concurrent traffic and prevent double-booking race conditions.
 
 ---
 
-## 2. System Features
+## 📖 Overview
 
-| Category | Technical Implementation |
-| :--- | :--- |
-| **Identity & Access** | Stateless JWT with RSA256 signatures; Google OAuth 2.0 OpenID Connect. |
-| **Concurrency Control** | Distributed Mutex (Redis SETNX) + JPA Optimistic Locking (`@Version`). |
-| **Data Integrity** | Transactional boundaries for inventory updates; soft-deletes for audit trails. |
-| **Async Operations** | RabbitMQ-driven task offloading for PDF generation and email delivery. |
-| **Observability** | Prometheus-compatible metrics via Spring Actuator and Micrometer. |
-| **Performance** | Redis L2 caching for read-heavy event metadata. |
+**What it does:** EventHub is a full-stack platform that allows users to discover events, receive ML-powered recommendations, and book tickets with guaranteed seat allocation. 
+**Why it exists:** To solve the classic "Lost Update" problem and high-concurrency data integrity challenges commonly faced by ticketing platforms during high-demand flash sales.
+**Who it is for:** Event organizers and millions of prospective attendees looking for a seamless, secure, and resilient ticket purchasing experience.
+**Real-world use case:** Powering a massive concert ticket release where 100,000+ users attempt to purchase 10,000 available seats simultaneously without overselling or crashing the system.
 
 ---
 
-## 3. Architecture & Data Flow
+## ✨ Key Features
 
-### 3.1 Backend Service Architecture
-The backend follows a modular monolith structure, separating concerns into domain-specific packages.
+*   **Distributed Seat Locking:** Atomically locks seats during checkout using Redis `SETNX` to prevent concurrent reservation conflicts.
+*   **Asynchronous Processing:** Offloads heavy tasks like PDF ticket generation and email notifications to RabbitMQ, drastically reducing API latency.
+*   **ML-Powered Recommendations:** Dedicated Python microservice providing personalized event recommendations based on user history and event metadata.
+*   **Resilient Microservices:** Domain-driven design split into Auth, Event, Booking, and Gateway services for independent scaling and failure isolation.
+*   **Centralized API Documentation:** Auto-generated OpenAPI 3.0 / Swagger UI aggregated at the API Gateway level.
+*   **Real-time Updates:** WebSocket integration (STOMP) for broadcasting live seat availability updates to all connected clients.
+*   **Robust Security:** Stateless JWT authentication with RSA256 signatures and Google OAuth 2.0 integration.
+
+---
+
+## 🏛️ Architecture
+
+EventHub utilizes a modular microservices architecture designed for horizontal scalability and high availability.
+
+### Components
+*   **Frontend:** React 19 SPA (Vite, Redux Toolkit, GSAP Animations).
+*   **Backend:** Spring Boot 3.4 microservices (Java 17).
+*   **API Gateway:** Spring Cloud Gateway handling centralized routing, CORS, and rate limiting.
+*   **Database:** MySQL 8.0 for persistent, ACID-compliant transactional data.
+*   **Cache & Mutex:** Redis 7.0 for distributed locking and high-speed read caching.
+*   **Message Broker:** RabbitMQ for decoupled, asynchronous task execution.
+*   **Machine Learning:** Python FastAPI service for recommendations.
+
+### Architecture Diagram
 
 ```mermaid
 graph TD
-    User([Web Client]) --> Gateway[Spring Security Filter Chain]
-    Gateway --> Controllers[Rest Controllers]
-    Controllers --> Services[Business Logic Services]
+    Client([Web/Mobile Client]) --> Gateway[API Gateway :8080]
     
-    subgraph "Consistency Layer"
-        Services --> RedisLock[Redis Distributed Lock]
-        Services --> JPA[Spring Data JPA / Hibernate]
+    subgraph "Microservices Layer"
+        Gateway --> Auth[Auth Service :8081]
+        Gateway --> Event[Event Service :8082]
+        Gateway --> Booking[Booking Service :8083]
     end
     
-    JPA --> MySQL[(MySQL 8.0)]
-    RedisLock --> Redis[(Redis 7.0)]
+    subgraph "Data Storage & Caching"
+        Auth --> MySQL[(MySQL DB)]
+        Event --> MySQL
+        Booking --> MySQL
+        Event --> Redis[(Redis Cache)]
+        Booking --> RedisLock[(Redis Mutex)]
+    end
     
-    subgraph "Async Layer"
-        Services --> RMQ_Pub[RabbitMQ Publisher]
-        RMQ_Pub --> RMQ[[RabbitMQ Broker]]
-        RMQ --> RMQ_Sub[Background Consumer]
-        RMQ_Sub --> Mail[Email/PDF Service]
+    subgraph "Async Processing"
+        Booking -- Publish --> RMQ[[RabbitMQ]]
+        RMQ -- Consume --> BookingWorker[Booking Consumer]
+        BookingWorker --> Notification[Email/PDF Service]
+    end
+    
+    subgraph "External Services"
+        Auth --> Google[Google OAuth OIDC]
+        Event --> ML[Python ML Service :8001]
     end
 ```
 
-### 3.2 Request Lifecycle: Booking Flow
-1.  **Auth**: Filter chain validates JWT/OAuth principal.
-2.  **Inventory Check**: Initial read from MySQL (or Redis cache).
-3.  **Distributed Lock**: Attempt `SETNX` on `seat_lock:{eventId}:{seatId}`.
-4.  **Transaction**:
-    *   Update event capacity.
-    *   Hibernate checks `@Version` for stale reads.
-    *   Save booking record.
-5.  **Event Dispatch**: Publish `BookingMessage` to RabbitMQ.
-6.  **Cleanup**: Release Redis lock (explicitly or via 5m TTL).
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---------|------------|----------|
+| **Frontend** | React 19, TypeScript, Redux | Dynamic UI, state management, and fast client-side rendering. |
+| **Gateway** | Spring Cloud Gateway | Centralized routing, authentication filtering, and load balancing. |
+| **Backend Services** | Spring Boot 3.4, Java 17 | Core business logic, REST APIs, and microservices orchestration. |
+| **Data Access** | Spring Data JPA, Hibernate | ORM mapping and database interactions. |
+| **Database** | MySQL 8.0 | ACID-compliant persistent storage for inventory and users. |
+| **Cache/Locking** | Redis 7.0 | Distributed mutex locks for seats and L2 caching for events. |
+| **Messaging** | RabbitMQ | Async communication decoupling booking from notification logic. |
+| **Machine Learning** | Python, FastAPI | High-performance recommendation engine. |
+| **Monitoring** | Prometheus, Grafana | System observability and real-time metrics tracking. |
+| **CI/CD** | GitHub Actions, JaCoCo | Automated testing, coverage reporting, and continuous integration. |
 
 ---
 
-## 4. Concurrency & Integrity Strategy
+## 🧠 System Design Decisions
 
-### 4.1 Distributed Locking (Redis SETNX)
-To prevent the "Lost Update" problem at the application layer, we implement a distributed mutex.
-*   **Strategy**: `setIfAbsent(key, value, timeout)`
-*   **Failure Behavior**: Returns `409 Conflict` if the lock is held.
-*   **Expiration**: 5-minute TTL prevents deadlocks from orphaned locks.
-
-### 4.2 Optimistic Locking (JPA `@Version`)
-Serves as a second layer of defense for database consistency.
-*   **Implementation**: Every `Event` entity has a version field incremented on update.
-*   **Conflict Handling**: If two transactions pass the Redis lock but update simultaneously, the second will throw `OptimisticLockException`.
+*   **Why Microservices?** A monolithic architecture becomes a bottleneck when the booking engine needs to scale independently of the event discovery catalog. Microservices allow targeted resource scaling.
+*   **Why Redis `SETNX` for Locks?** Traditional DB row locks cause massive contention and deadlocks during flash sales. Redis handles hundreds of thousands of atomic lock attempts per second in-memory, acting as a high-speed buffer before database writes.
+*   **Why RabbitMQ?** Synchronous PDF generation and email sending block HTTP threads. By dropping messages into RabbitMQ, the Booking Service can respond with `202 Accepted` in milliseconds, improving perceived performance.
+*   **Optimistic vs. Pessimistic DB Locking:** Used JPA Optimistic Locking (`@Version`) as a fallback to Redis to maintain DB integrity without the massive performance penalty of Pessimistic locks.
 
 ---
 
-## 5. API Documentation (OpenAPI 3 / Swagger UI)
-
-EventHub exposes full, interactive **OpenAPI 3.0** documentation powered by `springdoc-openapi`.
-
-### 5.1 Swagger UI Access
-
-| Service | Swagger UI URL | Raw OpenAPI JSON |
-| :--- | :--- | :--- |
-| **Gateway (Aggregated)** | `http://localhost:8080/swagger-ui.html` | N/A (aggregator only) |
-| **Auth Service** | `http://localhost:8081/api/swagger-ui.html` | `http://localhost:8081/api/v3/api-docs` |
-| **Event Service** | `http://localhost:8082/api/swagger-ui.html` | `http://localhost:8082/api/v3/api-docs` |
-| **Booking Service** | `http://localhost:8083/api/swagger-ui.html` | `http://localhost:8083/api/v3/api-docs` |
-
-> **Recommended**: Use the Gateway Swagger UI (`localhost:8080/swagger-ui.html`). It provides a unified dropdown to switch between all API groups.
-
-### 5.2 API Groups
-
-| Group | Tag | Description |
-| :--- | :--- | :--- |
-| **Auth APIs** | `Authentication APIs` | Register, Login, Google OAuth, OTP Verification, Password Reset |
-| **Event APIs** | `Event APIs` | Create, Read, Update, Delete events; ML Recommendations |
-| **Review APIs** | `Review APIs` | Submit and view event reviews |
-| **Booking APIs** | `Booking APIs` | Create bookings (async), poll status, download PDF tickets |
-| **Seat Lock APIs** | `Seat Lock APIs` | Distributed Redis seat locking (HTTP + WebSocket) |
-| **Analytics APIs** | `Analytics APIs` | Admin-only: traffic dashboard, revenue breakdown |
-
-### 5.3 Documented Endpoints Summary
-
-| Method | Path | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Create user account |
-| `POST` | `/api/auth/login` | Authenticate with email/password |
-| `POST` | `/api/auth/verify-otp` | 2FA OTP verification |
-| `POST` | `/api/auth/google` | Google OAuth login |
-| `POST` | `/api/auth/forgot-password` | Request password reset OTP |
-| `POST` | `/api/auth/reset-password` | Reset password with OTP |
-| `GET` | `/api/events` | Paginated list of upcoming events |
-| `GET` | `/api/events/{id}` | Get event details |
-| `POST` | `/api/events` | Create event (ADMIN) |
-| `PATCH` | `/api/events/{id}` | Update event (ADMIN) |
-| `DELETE` | `/api/events/{id}` | Delete event (ADMIN) |
-| `GET` | `/api/events/{id}/recommendations` | ML-powered recommendations |
-| `POST` | `/api/events/{id}/reviews` | Submit review |
-| `GET` | `/api/events/{id}/reviews` | Get event reviews |
-| `POST` | `/api/bookings` | Initiate async booking |
-| `GET` | `/api/bookings/status/{id}` | Poll booking status |
-| `GET` | `/api/bookings` | My bookings (paginated) |
-| `GET` | `/api/bookings/{id}/ticket` | Download PDF ticket |
-| `POST` | `/api/seats/{eventId}/lock` | Lock a seat |
-| `POST` | `/api/seats/{eventId}/unlock` | Unlock a seat |
-| `GET` | `/api/seats/{eventId}/locked` | Get all locked seats |
-| `GET` | `/api/admin/analytics/traffic` | Traffic dashboard (ADMIN) |
-| `GET` | `/api/admin/analytics/revenue` | Revenue by event (ADMIN) |
-
-### 5.4 Authentication in Swagger UI
-1. Open the Swagger UI URL above.
-2. Click the **Authorize 🔒** button.
-3. Enter your JWT token from the login response (without the `Bearer ` prefix).
-4. Click **Authorize**, then **Close**.
-5. All subsequent API calls will include the `Authorization: Bearer <token>` header.
-
----
-
-## 6. Tech Stack Details
-
-| Layer | Component | Implementation |
-| :--- | :--- | :--- |
-| **Frontend** | React 19, TS | Vite build tool; Redux Toolkit for state management. |
-| **Backend** | Spring Boot 3.4 | Spring Web, Security, Data JPA, Actuator. |
-| **Persistence** | MySQL 8.0 | InnoDB engine; normalized schema for referential integrity. |
-| **Messaging** | RabbitMQ | Decoupled background task execution. |
-| **In-Memory** | Redis 7.0 | Caching and distributed synchronization. |
-
----
-
-## 7. Development & Deployment
-
-### 7.1 Local Environment Setup
-1.  **Infrastructure**: Navigate to `backend/` and run `docker-compose up -d` to spin up MySQL, Redis, and RabbitMQ.
-2.  **Backend**: `./mvnw spring-boot:run`.
-3.  **Frontend**: `npm install && npm run dev`.
-
-### 7.2 Deployment Strategy
-*   **Current State**: Deployable via Docker Compose for all infrastructure.
-*   **Future Roadmap**:
-    *   Moving to Kubernetes (K8s) for horizontal pod autoscaling (HPA).
-    *   Implementing Idempotency Keys for all write operations.
-    *   Migrating to a distributed database (e.g., CockroachDB) if relational scaling becomes a bottleneck.
-
----
-
-## 5. Detailed Documentation
-For deep-dives into specific modules, refer to the technical docs:
-*   [**Concurrency & Locking Strategy**](docs/concurrency/locking-strategy.md)
-*   [**Backend Architecture & Data Flow**](docs/architecture/system-design.md)
-*   [**API Specification**](docs/api/endpoints.md)
-*   [**Deployment Roadmap**](docs/deployment/)
-
----
-
-## 6. Folder Structure
+## 📁 Project Structure
 
 ```text
-.
-├── backend/                # Spring Boot Service
-│   ├── src/main/java/      # Domain logic (auth, booking, events)
-│   ├── src/main/resources/ # Persistence and environment config
-│   └── docker-compose.yml  # Local infrastructure definition
-├── frontend/               # React SPA
-│   ├── src/components/     # UI components (GSAP integration)
-│   ├── src/store/          # Redux/State management
-│   └── vite.config.ts      # Frontend build config
-└── docs/                   # Conceptual documentation modules
+EventHub/
+├── backend/
+│   ├── common-library/      # Shared DTOs, Exceptions, Security Configs
+│   ├── gateway-service/     # Spring Cloud Gateway (Port 8080)
+│   ├── auth-service/        # JWT, Users, OAuth (Port 8081)
+│   ├── event-service/       # Event CRUD, Reviews, Catalog Cache (Port 8082)
+│   ├── booking-service/     # Seat Locks, Async Booking, PDF Tickets (Port 8083)
+│   ├── coverage-report/     # JaCoCo Aggregator for multi-module CI
+│   ├── docker-compose.yml   # Infrastructure orchestration
+│   └── pom.xml              # Root Maven configuration
+├── frontend/                # React 19 UI Application
+├── ml-service/              # Python FastAPI Recommendation Engine
+├── monitoring/              # Prometheus/Grafana configs
+└── .github/workflows/       # GitHub Actions CI/CD pipelines
 ```
 
 ---
 
-## 9. Contributing & Security
-*   **Security Architecture**: All sensitive operations require valid JWT. Rate limiting is applied at the IP level.
-*   **Monitoring**: Access real-time metrics at `/actuator/prometheus`.
+## 🗄️ Database Design
+
+**Key Entities & Relationships:**
+*   **User:** Contains authentication credentials and role data.
+*   **Event:** Contains metadata, total capacity, and available seats. Features an `@Version` column for optimistic concurrency control.
+*   **Booking:** Links User and Event. Tracks ticket count, specific seats allocated, and booking status (PENDING/CONFIRMED).
+*   **Review:** Links User and Event for rating data.
+
+### Entity-Relationship Diagram
+
+```mermaid
+erDiagram
+    USER ||--o{ BOOKING : places
+    USER ||--o{ REVIEW : writes
+    EVENT ||--o{ BOOKING : has
+    EVENT ||--o{ REVIEW : receives
+    
+    USER {
+        Long id PK
+        String email UK
+        String password
+        String role
+    }
+    EVENT {
+        Long id PK
+        String title
+        Integer totalSeats
+        Integer availableSeats
+        Integer version "Optimistic Lock"
+    }
+    BOOKING {
+        Long id PK
+        Long userId FK
+        Long eventId FK
+        Integer ticketCount
+        String status
+    }
+    REVIEW {
+        Long id PK
+        Long userId FK
+        Long eventId FK
+        Integer rating
+        String comment
+    }
+```
 
 ---
-*For detailed implementation notes, refer to the source code documentation in the respective modules.*
+
+## 🔌 API Documentation (OpenAPI 3)
+
+EventHub features centralized Swagger UI documentation accessible at the API Gateway.
+
+**Unified Swagger UI URL:** `http://localhost:8080/swagger-ui.html`
+
+### Major Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register a new user | No |
+| `POST` | `/api/auth/login` | Authenticate and get JWT | No |
+| `GET` | `/api/events` | Paginated event catalog (cached) | No |
+| `GET` | `/api/events/{id}/recommendations` | Get ML recommendations | No |
+| `POST` | `/api/seats/{eventId}/lock` | Atomically lock a seat in Redis | **Yes** (User) |
+| `POST` | `/api/bookings` | Queue an async ticket booking | **Yes** (User) |
+| `GET` | `/api/bookings/status/{id}` | Poll async booking status | **Yes** (User) |
+| `GET` | `/api/bookings/{id}/ticket` | Download generated PDF ticket | **Yes** (User) |
+| `POST` | `/api/events` | Create a new event | **Yes** (Admin) |
+| `GET` | `/api/admin/analytics/traffic` | Traffic & revenue dashboard | **Yes** (Admin) |
+
+#### Sample Request: Asynchronous Booking
+```json
+POST /api/bookings
+Authorization: Bearer <JWT_TOKEN>
+
+{
+  "eventId": 42,
+  "ticketCount": 2,
+  "seats": ["A1", "A2"]
+}
+```
+*Response (202 Accepted):*
+```json
+{
+  "success": true,
+  "message": "Booking request accepted and queued",
+  "data": {
+    "bookingId": "c8f2b1a1-9d3c-...",
+    "status": "PENDING"
+  }
+}
+```
+
+---
+
+## 🔒 Security
+
+*   **Authentication Mechanism:** Stateless JWT (JSON Web Tokens) verified at the Gateway and Service layers using shared public keys.
+*   **Authorization Strategy:** Role-Based Access Control (RBAC) via Spring Security `@PreAuthorize("hasRole('ADMIN')")`.
+*   **Password Handling:** Passwords hashed with BCrypt.
+*   **OAuth Integration:** Direct integration with Google OAuth 2.0 OpenID Connect.
+*   **Rate Limiting:** Redis-backed token bucket algorithm (e.g., max 500 booking attempts per minute per user).
+*   **Cross-Origin Resource Sharing (CORS):** Strictly configured at the API Gateway for frontend domains.
+
+---
+
+## ⚡ Performance Optimizations
+
+*   **L2 Caching:** Event catalog queries (`GET /events`) are cached in Redis. Cache eviction triggers automatically on `POST` or `PATCH` to maintain consistency.
+*   **Pagination:** All list endpoints use Spring Data `Pageable` to prevent loading massive datasets into memory.
+*   **Asynchronous I/O:** PDF generation logic uses `itextpdf` inside a decoupled RabbitMQ listener, keeping HTTP worker threads free.
+*   **Query Optimization:** Fetch types configured carefully (`FetchType.LAZY` for `ManyToOne` relations) to prevent the N+1 query problem.
+
+---
+
+## 🚀 Deployment
+
+The system is configured for containerized deployment using Docker.
+
+**Infrastructure Dependencies:** MySQL, Redis, RabbitMQ.
+
+### CI/CD Pipeline
+A robust GitHub Actions pipeline (`backend-ci.yml`) triggers on pushes to `main`/`develop`:
+1. Checks out code and provisions Java 17 Temurin.
+2. Validates and compiles the Maven multi-module structure.
+3. Executes unit and integration tests.
+4. Generates aggregated JaCoCo code coverage reports.
+5. Uploads artifacts (Surefire reports, JaCoCo HTML) for review.
+
+---
+
+## 💻 Running Locally
+
+### Prerequisites
+*   Docker & Docker Compose
+*   Java 17 (JDK)
+*   Node.js 20+
+
+### Step-by-Step Setup
+
+1. **Start Infrastructure Services**
+   ```bash
+   cd backend
+   docker-compose up -d
+   ```
+   *(This boots MySQL, Redis, RabbitMQ, Prometheus, Grafana, and the ML Service)*
+
+2. **Run the Microservices (Via provided batch script)**
+   ```cmd
+   .\start-all.bat
+   ```
+   *(Alternatively, run `./mvnw spring-boot:run` inside each service directory: auth-service, event-service, booking-service, gateway-service)*
+
+3. **Verify API Gateway**
+   Open `http://localhost:8080/swagger-ui.html` in your browser.
+
+4. **Start Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+---
+
+## 🧪 Testing
+
+The codebase maintains an aggregated **~70% Instruction Coverage** (Auth Service: ~91%).
+*   **Unit Tests:** JUnit 5 and Mockito verifying core business logic and exception handling without database dependencies.
+*   **Integration Tests:** `MockMvc` verifying full controller layers, serialization, and HTTP status codes.
+*   **Multi-Module Reporting:** A dedicated `coverage-report` maven module aggregates JaCoCo metrics across all microservices into a single unified HTML report.
+
+**Run Tests:**
+```bash
+cd backend
+./mvnw clean verify
+```
+
+---
+
+## 💡 Challenges Solved
+
+**Challenge: The Double Booking Race Condition**
+During popular event sales, multiple users attempt to checkout the exact same seat simultaneously. If two threads read the database simultaneously, both see the seat as "available", process payment, and write to the database, resulting in an oversold seat.
+
+**Solution: Multi-Layered Concurrency Control**
+1. **Layer 1 (Application):** Distributed Mutex using Redis `SETNX`. The user "locks" the seat for 5 minutes during checkout. Any concurrent request for that seat fails immediately with `409 Conflict` out of memory, never touching the DB.
+2. **Layer 2 (Database):** Optimistic Locking (`@Version` annotation). Even if the lock fails or expires unexpectedly, Hibernate checks the entity version during the final `UPDATE`. If another transaction altered it, an `OptimisticLockException` rolls back the transaction entirely.
+
+---
+
+## 📈 Scalability Roadmap
+
+*   **Current Limitations:** The MySQL database is a single point of failure and write bottleneck.
+*   **Future Improvements:** 
+    *   Migrate to Kubernetes (K8s) for Horizontal Pod Autoscaling (HPA) of the Booking Service during spikes.
+    *   Implement Database Sharding or migrate to a distributed SQL database (e.g., CockroachDB).
+    *   Introduce Idempotency Keys for all write endpoints to ensure safe retries on network failures.
+
+---
+
+## 📊 Engineering Metrics
+
+*(Inferred performance baselines based on architectural design)*
+
+*   **API Response Improvement:** Implementation of Redis L2 caching on the Event Catalog reduces `GET /api/events` latency by an estimated **80-90%** (bypassing MySQL disk I/O).
+*   **Throughput Escalation:** Decoupling booking confirmation via RabbitMQ increases API write throughput by shifting ~2-3 seconds of synchronous processing (PDF generation) off the main thread.
+*   **Database Query Reduction:** Rate Limiter (Token Bucket) intercepts malicious traffic at the controller layer, preventing unnecessary DB queries and protecting downstream resources.
+
+---
+
+## 📸 Screenshots
+
+*(Replace with actual system screenshots)*
+
+| Event Discovery UI | Swagger Centralized API |
+|:---:|:---:|
+| `![Event UI Placeholder](https://via.placeholder.com/400x250?text=Event+Discovery+Dashboard)` | `![Swagger UI Placeholder](https://via.placeholder.com/400x250?text=Centralized+Swagger+API)` |
+
+---
+
+## 📝 Resume Highlights
+
+*   **Architected and deployed** a highly available distributed event ticketing platform utilizing a Spring Boot microservices architecture (API Gateway, Auth, Event, Booking).
+*   **Engineered a multi-layered concurrency strategy** eliminating double-booking race conditions during high-traffic flash sales using Redis `SETNX` distributed locks and JPA Optimistic Locking.
+*   **Optimized API response times and throughput** by implementing L2 Redis caching for read-heavy operations and RabbitMQ for asynchronous offloading of resource-intensive tasks (PDF generation).
+*   **Implemented robust security protocols** including stateless JWT authentication, Role-Based Access Control, and Redis-backed rate limiting to protect against brute-force attacks.
+*   **Established comprehensive CI/CD pipelines** via GitHub Actions, integrating multi-module Maven builds, automated testing, and aggregated JaCoCo reporting achieving 70%+ global test coverage.
+
+---
+
+## 🎓 Learning Outcomes
+
+*   Designing resilient microservices boundaries and inter-service communication.
+*   Handling distributed concurrency control and understanding the CAP theorem tradeoffs.
+*   Implementing asynchronous message-driven architectures for decoupled system design.
+*   Centralizing API documentation (OpenAPI 3) and routing through a Spring Cloud Gateway.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
