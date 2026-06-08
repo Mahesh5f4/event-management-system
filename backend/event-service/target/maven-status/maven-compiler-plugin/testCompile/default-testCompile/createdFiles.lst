@@ -1,5 +1,0 @@
-com\EventmanagementbyMahesh\event\events\controller\EventControllerTest.class
-com\EventmanagementbyMahesh\event\events\service\MLRecommendationServiceTest.class
-com\EventmanagementbyMahesh\event\events\service\ReviewServiceTest.class
-com\EventmanagementbyMahesh\event\events\scheduler\EventCleanupSchedulerTest.class
-com\EventmanagementbyMahesh\event\events\service\EventServiceTest.class

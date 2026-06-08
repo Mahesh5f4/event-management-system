@@ -1,5 +1,0 @@
-com\EventmanagementbyMahesh\event\booking\integration\BookingFlowIntegrationTest.class
-com\EventmanagementbyMahesh\event\booking\service\BookingServiceTest.class
-com\EventmanagementbyMahesh\event\booking\service\SeatLockServiceTest.class
-com\EventmanagementbyMahesh\event\booking\controller\BookingControllerTest.class
-com\EventmanagementbyMahesh\event\booking\service\BookingConcurrencyIntegrationTest.class

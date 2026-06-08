@@ -83,18 +83,66 @@ Serves as a second layer of defense for database consistency.
 
 ---
 
-## 5. API Documentation
+## 5. API Documentation (OpenAPI 3 / Swagger UI)
 
-### 5.1 Authentication
-`POST /api/auth/login`
-*   **Payload**: `{ "email": "...", "password": "..." }`
-*   **Response (200)**: `{ "token": "...", "expiresIn": 3600 }`
+EventHub exposes full, interactive **OpenAPI 3.0** documentation powered by `springdoc-openapi`.
 
-### 5.2 Booking
-`POST /api/bookings`
-*   **Payload**: `{ "eventId": 1, "seatId": "A12" }`
-*   **Response (201)**: `{ "id": 500, "status": "CONFIRMED" }`
-*   **Conflict (409)**: `{ "error": "Seat is temporarily held by another user" }`
+### 5.1 Swagger UI Access
+
+| Service | Swagger UI URL | Raw OpenAPI JSON |
+| :--- | :--- | :--- |
+| **Gateway (Aggregated)** | `http://localhost:8080/swagger-ui.html` | N/A (aggregator only) |
+| **Auth Service** | `http://localhost:8081/api/swagger-ui.html` | `http://localhost:8081/api/v3/api-docs` |
+| **Event Service** | `http://localhost:8082/api/swagger-ui.html` | `http://localhost:8082/api/v3/api-docs` |
+| **Booking Service** | `http://localhost:8083/api/swagger-ui.html` | `http://localhost:8083/api/v3/api-docs` |
+
+> **Recommended**: Use the Gateway Swagger UI (`localhost:8080/swagger-ui.html`). It provides a unified dropdown to switch between all API groups.
+
+### 5.2 API Groups
+
+| Group | Tag | Description |
+| :--- | :--- | :--- |
+| **Auth APIs** | `Authentication APIs` | Register, Login, Google OAuth, OTP Verification, Password Reset |
+| **Event APIs** | `Event APIs` | Create, Read, Update, Delete events; ML Recommendations |
+| **Review APIs** | `Review APIs` | Submit and view event reviews |
+| **Booking APIs** | `Booking APIs` | Create bookings (async), poll status, download PDF tickets |
+| **Seat Lock APIs** | `Seat Lock APIs` | Distributed Redis seat locking (HTTP + WebSocket) |
+| **Analytics APIs** | `Analytics APIs` | Admin-only: traffic dashboard, revenue breakdown |
+
+### 5.3 Documented Endpoints Summary
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Create user account |
+| `POST` | `/api/auth/login` | Authenticate with email/password |
+| `POST` | `/api/auth/verify-otp` | 2FA OTP verification |
+| `POST` | `/api/auth/google` | Google OAuth login |
+| `POST` | `/api/auth/forgot-password` | Request password reset OTP |
+| `POST` | `/api/auth/reset-password` | Reset password with OTP |
+| `GET` | `/api/events` | Paginated list of upcoming events |
+| `GET` | `/api/events/{id}` | Get event details |
+| `POST` | `/api/events` | Create event (ADMIN) |
+| `PATCH` | `/api/events/{id}` | Update event (ADMIN) |
+| `DELETE` | `/api/events/{id}` | Delete event (ADMIN) |
+| `GET` | `/api/events/{id}/recommendations` | ML-powered recommendations |
+| `POST` | `/api/events/{id}/reviews` | Submit review |
+| `GET` | `/api/events/{id}/reviews` | Get event reviews |
+| `POST` | `/api/bookings` | Initiate async booking |
+| `GET` | `/api/bookings/status/{id}` | Poll booking status |
+| `GET` | `/api/bookings` | My bookings (paginated) |
+| `GET` | `/api/bookings/{id}/ticket` | Download PDF ticket |
+| `POST` | `/api/seats/{eventId}/lock` | Lock a seat |
+| `POST` | `/api/seats/{eventId}/unlock` | Unlock a seat |
+| `GET` | `/api/seats/{eventId}/locked` | Get all locked seats |
+| `GET` | `/api/admin/analytics/traffic` | Traffic dashboard (ADMIN) |
+| `GET` | `/api/admin/analytics/revenue` | Revenue by event (ADMIN) |
+
+### 5.4 Authentication in Swagger UI
+1. Open the Swagger UI URL above.
+2. Click the **Authorize 🔒** button.
+3. Enter your JWT token from the login response (without the `Bearer ` prefix).
+4. Click **Authorize**, then **Close**.
+5. All subsequent API calls will include the `Authorization: Bearer <token>` header.
 
 ---
 
