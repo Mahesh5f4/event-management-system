@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>RateLimiterService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">common-library</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.common.security</a> &gt; <span class="el_source">RateLimiterService.java</span></div><h1>RateLimiterService.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.common.security;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class RateLimiterService {
+
+    private final StringRedisTemplate redisTemplate;
+    private static final String RATE_LIMIT_PREFIX = &quot;ratelimit:&quot;;
+
+<span class="nc" id="L15">    public RateLimiterService(StringRedisTemplate redisTemplate) {</span>
+<span class="nc" id="L16">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L17">    }</span>
+
+    /**
+     * Checks if a user is allowed to make a request based on a limit per time window.
+     * @param key Unique key (e.g., user email or IP)
+     * @param limit Max requests allowed
+     * @param windowSeconds Time window in seconds
+     * @return true if allowed, false if limit exceeded
+     */
+    public boolean isAllowed(String key, int limit, int windowSeconds) {
+<span class="nc" id="L27">        String redisKey = RATE_LIMIT_PREFIX + key;</span>
+        
+<span class="nc" id="L29">        Long current = redisTemplate.opsForValue().increment(redisKey);</span>
+        
+<span class="nc bnc" id="L31" title="All 4 branches missed.">        if (current != null &amp;&amp; current == 1) {</span>
+<span class="nc" id="L32">            redisTemplate.expire(redisKey, Duration.ofSeconds(windowSeconds));</span>
+        }
+        
+<span class="nc bnc" id="L35" title="All 4 branches missed.">        return current != null &amp;&amp; current &lt;= limit;</span>
+    }
+
+    public void reset(String key) {
+<span class="nc" id="L39">        redisTemplate.delete(RATE_LIMIT_PREFIX + key);</span>
+<span class="nc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

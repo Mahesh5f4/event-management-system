@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>EventController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">event-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.events.controller</a> &gt; <span class="el_source">EventController.java</span></div><h1>EventController.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.events.controller;
+
+import com.EventmanagementbyMahesh.event.common.ApiResponse;
+import com.EventmanagementbyMahesh.event.events.dto.*;
+import com.EventmanagementbyMahesh.event.events.service.EventService;
+import com.EventmanagementbyMahesh.event.events.service.MLRecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/events&quot;)
+@Tag(name = &quot;Event APIs&quot;, description = &quot;Event lifecycle management: create, read, update, delete events and fetch recommendations&quot;)
+public class EventController {
+
+    private final EventService service;
+    private final MLRecommendationService recommendationService;
+
+<span class="nc" id="L28">    public EventController(EventService service, MLRecommendationService recommendationService) {</span>
+<span class="nc" id="L29">        this.service = service;</span>
+<span class="nc" id="L30">        this.recommendationService = recommendationService;</span>
+<span class="nc" id="L31">    }</span>
+
+    @Operation(summary = &quot;Get ML event recommendations&quot;,
+            description = &quot;Fetches a list of recommended events for a given event ID using the ML recommendation engine.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Recommended events returned&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;404&quot;, description = &quot;Event not found&quot;)
+    })
+    @GetMapping(&quot;/{id}/recommendations&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;EventResponse&gt;&gt;&gt; getRecommendations(
+            @Parameter(description = &quot;ID of the source event&quot;) @PathVariable Long id) {
+<span class="nc" id="L42">        return ResponseEntity.ok(ApiResponse.ok(</span>
+<span class="nc" id="L43">                recommendationService.getRecommendations(id),</span>
+                &quot;Recommended events fetched successfully&quot;
+        ));
+    }
+
+    @Operation(summary = &quot;Create a new event&quot;,
+            description = &quot;Creates a new event. Requires ADMIN role. Evicts the events cache.&quot;,
+            security = @SecurityRequirement(name = &quot;Bearer Authentication&quot;))
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Event created successfully&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;403&quot;, description = &quot;Access denied - requires ADMIN role&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid request body&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @PostMapping
+    public ResponseEntity&lt;ApiResponse&lt;EventResponse&gt;&gt; create(@RequestBody CreateEventRequest req) {
+<span class="nc" id="L59">        EventResponse response = service.create(req);</span>
+<span class="nc" id="L60">        return ResponseEntity.ok(ApiResponse.ok(response, &quot;Event created successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Get all active events (paginated)&quot;,
+            description = &quot;Returns a paginated list of all upcoming events, ordered by start time descending.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Events fetched successfully&quot;)
+    @GetMapping
+    public ResponseEntity&lt;ApiResponse&lt;Page&lt;EventResponse&gt;&gt;&gt; getAll(
+            @Parameter(description = &quot;Page number (0-indexed)&quot;, example = &quot;0&quot;) @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @Parameter(description = &quot;Number of events per page&quot;, example = &quot;10&quot;) @RequestParam(defaultValue = &quot;10&quot;) int size) {
+<span class="nc" id="L70">        return ResponseEntity.ok(ApiResponse.ok(service.getAll(page, size), &quot;Events fetched successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Get event by ID&quot;,
+            description = &quot;Returns a single event by ID. Returns 404 if not found, or 400 if the event has expired.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Event fetched successfully&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;404&quot;, description = &quot;Event not found&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;400&quot;, description = &quot;Event has expired&quot;)
+    })
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;EventResponse&gt;&gt; getById(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long id) {
+<span class="nc" id="L83">        return ResponseEntity.ok(ApiResponse.ok(service.getById(id), &quot;Event fetched successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Update an event&quot;,
+            description = &quot;Partially updates an event's details. Requires ADMIN role. Only supplied fields are updated.&quot;,
+            security = @SecurityRequirement(name = &quot;Bearer Authentication&quot;))
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Event updated successfully&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;403&quot;, description = &quot;Access denied - requires ADMIN role&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;404&quot;, description = &quot;Event not found&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @PatchMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Map&lt;String, Object&gt;&gt;&gt; update(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long id,
+            @RequestBody UpdateEventRequest req) {
+<span class="nc" id="L99">        Map&lt;String, Object&gt; result = service.update(id, req);</span>
+<span class="nc" id="L100">        return ResponseEntity.ok(ApiResponse.ok(result, &quot;Event updated successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Delete an event&quot;,
+            description = &quot;Permanently deletes an event by ID. Requires ADMIN role.&quot;,
+            security = @SecurityRequirement(name = &quot;Bearer Authentication&quot;))
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Event deleted successfully&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;403&quot;, description = &quot;Access denied - requires ADMIN role&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;?&gt;&gt; delete(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long id) {
+<span class="nc" id="L114">        service.delete(id);</span>
+<span class="nc" id="L115">        return ResponseEntity.ok(ApiResponse.ok(null, &quot;Event deleted successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Internal: Deduct seats&quot;,
+            description = &quot;Internal service call to deduct available seats after a booking is confirmed.&quot;)
+    @PutMapping(&quot;/internal/{id}/deduct-seats&quot;)
+    public ResponseEntity&lt;?&gt; deductSeats(
+            @PathVariable Long id,
+            @Parameter(description = &quot;Number of seats to deduct&quot;) @RequestParam int count) {
+<span class="nc" id="L124">        service.deductSeats(id, count);</span>
+<span class="nc" id="L125">        return ResponseEntity.ok().build();</span>
+    }
+
+    @Operation(summary = &quot;Internal: Add seats&quot;,
+            description = &quot;Internal service call to restore available seats after a booking is cancelled.&quot;)
+    @PutMapping(&quot;/internal/{id}/add-seats&quot;)
+    public ResponseEntity&lt;?&gt; addSeats(
+            @PathVariable Long id,
+            @Parameter(description = &quot;Number of seats to restore&quot;) @RequestParam int count) {
+<span class="nc" id="L134">        service.addSeats(id, count);</span>
+<span class="nc" id="L135">        return ResponseEntity.ok().build();</span>
+    }
+
+    @Operation(summary = &quot;Internal: Get event by ID (raw)&quot;,
+            description = &quot;Internal service call that returns the raw EventResponse without API wrapper.&quot;)
+    @GetMapping(&quot;/internal/{id}&quot;)
+    public ResponseEntity&lt;EventResponse&gt; getInternalById(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long id) {
+<span class="nc" id="L143">        return ResponseEntity.ok(service.getById(id));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

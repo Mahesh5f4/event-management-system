@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>WebSocketEventListener.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.config</a> &gt; <span class="el_source">WebSocketEventListener.java</span></div><h1>WebSocketEventListener.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.config;
+
+import com.EventmanagementbyMahesh.event.booking.service.SeatLockService;
+import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+
+import java.util.List;
+
+@Component
+public class WebSocketEventListener {
+
+    private final SeatLockService seatLockService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+<span class="nc" id="L19">    public WebSocketEventListener(SeatLockService seatLockService, SimpMessagingTemplate messagingTemplate) {</span>
+<span class="nc" id="L20">        this.seatLockService = seatLockService;</span>
+<span class="nc" id="L21">        this.messagingTemplate = messagingTemplate;</span>
+<span class="nc" id="L22">    }</span>
+
+    @EventListener
+    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+<span class="nc" id="L26">        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());</span>
+<span class="nc" id="L27">        String userId = (String) headerAccessor.getSessionAttributes().get(&quot;userId&quot;);</span>
+<span class="nc" id="L28">        Long eventId = (Long) headerAccessor.getSessionAttributes().get(&quot;eventId&quot;);</span>
+
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        if (userId != null &amp;&amp; eventId != null) {</span>
+<span class="nc" id="L31">            List&lt;String&gt; userSeats = seatLockService.getSeatsLockedByUser(eventId, userId);</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">            if (!userSeats.isEmpty()) {</span>
+<span class="nc" id="L33">                seatLockService.unlockMultipleSeats(eventId, userSeats);</span>
+<span class="nc" id="L34">                List&lt;String&gt; lockedSeats = seatLockService.getLockedSeats(eventId);</span>
+<span class="nc" id="L35">                messagingTemplate.convertAndSend(&quot;/topic/event/&quot; + eventId + &quot;/seats&quot;, lockedSeats);</span>
+            }
+        }
+<span class="nc" id="L38">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

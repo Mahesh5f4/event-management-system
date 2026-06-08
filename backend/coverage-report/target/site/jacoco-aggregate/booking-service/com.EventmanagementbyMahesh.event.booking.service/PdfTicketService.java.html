@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>PdfTicketService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.service</a> &gt; <span class="el_source">PdfTicketService.java</span></div><h1>PdfTicketService.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.service;
+
+import com.EventmanagementbyMahesh.event.booking.entity.Booking;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.util.UUID;
+
+@Service
+<span class="nc" id="L27">public class PdfTicketService {</span>
+
+    public byte[] generateTicket(Booking booking) {
+<span class="nc" id="L30">        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {</span>
+<span class="nc" id="L31">            PdfWriter writer = new PdfWriter(baos);</span>
+<span class="nc" id="L32">            PdfDocument pdf = new PdfDocument(writer);</span>
+<span class="nc" id="L33">            Document document = new Document(pdf);</span>
+
+            // Ticket Border &amp; Background (Premium look)
+<span class="nc" id="L36">            DeviceRgb primaryColor = new DeviceRgb(99, 102, 241); // #6366f1</span>
+
+            // Header Table
+<span class="nc" id="L39">            float[] columnWidths = {1, 2};</span>
+<span class="nc" id="L40">            Table headerTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}));</span>
+<span class="nc" id="L41">            headerTable.setWidth(UnitValue.createPercentValue(100));</span>
+
+            // Brand
+<span class="nc" id="L44">            Cell brandCell = new Cell().add(new Paragraph(&quot;EventHub&quot;)</span>
+<span class="nc" id="L45">                    .setFontSize(28)</span>
+<span class="nc" id="L46">                    .setBold()</span>
+<span class="nc" id="L47">                    .setFontColor(primaryColor))</span>
+<span class="nc" id="L48">                    .setBorder(Border.NO_BORDER);</span>
+<span class="nc" id="L49">            headerTable.addCell(brandCell);</span>
+
+            // Ticket ID
+<span class="nc" id="L52">            Cell idCell = new Cell().add(new Paragraph(&quot;TICKET #&quot; + booking.getId())</span>
+<span class="nc" id="L53">                    .setFontSize(12)</span>
+<span class="nc" id="L54">                    .setFontColor(ColorConstants.GRAY)</span>
+<span class="nc" id="L55">                    .setTextAlignment(TextAlignment.RIGHT))</span>
+<span class="nc" id="L56">                    .setBorder(Border.NO_BORDER);</span>
+<span class="nc" id="L57">            headerTable.addCell(idCell);</span>
+
+<span class="nc" id="L59">            document.add(headerTable);</span>
+<span class="nc" id="L60">            document.add(new Paragraph(&quot;\n&quot;));</span>
+
+            // Event Details Box
+<span class="nc" id="L63">            Table detailsBox = new Table(1);</span>
+<span class="nc" id="L64">            detailsBox.setWidth(UnitValue.createPercentValue(100));</span>
+<span class="nc" id="L65">            detailsBox.setBackgroundColor(new DeviceRgb(248, 250, 252));</span>
+<span class="nc" id="L66">            detailsBox.setPadding(20);</span>
+
+<span class="nc" id="L68">            detailsBox.addCell(new Cell().add(new Paragraph(booking.getEventTitle())</span>
+<span class="nc" id="L69">                    .setFontSize(24)</span>
+<span class="nc" id="L70">                    .setBold())</span>
+<span class="nc" id="L71">                    .setBorder(Border.NO_BORDER));</span>
+
+<span class="nc" id="L73">            detailsBox.addCell(new Cell().add(new Paragraph(booking.getEventTime())</span>
+<span class="nc" id="L74">                    .setFontSize(14)</span>
+<span class="nc" id="L75">                    .setFontColor(ColorConstants.DARK_GRAY))</span>
+<span class="nc" id="L76">                    .setBorder(Border.NO_BORDER));</span>
+
+<span class="nc" id="L78">            detailsBox.addCell(new Cell().add(new Paragraph(&quot;📍 &quot; + booking.getEventLocation())</span>
+<span class="nc" id="L79">                    .setFontSize(14)</span>
+<span class="nc" id="L80">                    .setFontColor(ColorConstants.DARK_GRAY))</span>
+<span class="nc" id="L81">                    .setBorder(Border.NO_BORDER));</span>
+
+<span class="nc" id="L83">            document.add(detailsBox);</span>
+<span class="nc" id="L84">            document.add(new Paragraph(&quot;\n&quot;));</span>
+
+            // QR Code &amp; Seat Info
+<span class="nc" id="L87">            Table footerTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}));</span>
+<span class="nc" id="L88">            footerTable.setWidth(UnitValue.createPercentValue(100));</span>
+
+            // Info
+<span class="nc" id="L91">            Cell infoCell = new Cell();</span>
+<span class="nc" id="L92">            infoCell.add(new Paragraph(&quot;ATTENDEE&quot;)</span>
+<span class="nc" id="L93">                    .setFontSize(10)</span>
+<span class="nc" id="L94">                    .setFontColor(ColorConstants.GRAY));</span>
+<span class="nc" id="L95">            infoCell.add(new Paragraph(booking.getUserEmail())</span>
+<span class="nc" id="L96">                    .setFontSize(14)</span>
+<span class="nc" id="L97">                    .setBold());</span>
+<span class="nc" id="L98">            infoCell.add(new Paragraph(&quot;\n&quot;));</span>
+<span class="nc" id="L99">            infoCell.add(new Paragraph(&quot;SEATS&quot;)</span>
+<span class="nc" id="L100">                    .setFontSize(10)</span>
+<span class="nc" id="L101">                    .setFontColor(ColorConstants.GRAY));</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            infoCell.add(new Paragraph(booking.getSeats() != null ? booking.getSeats() : &quot;General Admission&quot;)</span>
+<span class="nc" id="L103">                    .setFontSize(14)</span>
+<span class="nc" id="L104">                    .setBold());</span>
+<span class="nc" id="L105">            infoCell.setBorder(Border.NO_BORDER);</span>
+<span class="nc" id="L106">            footerTable.addCell(infoCell);</span>
+
+            // QR Code
+<span class="nc" id="L109">            byte[] qrCode = generateQrCode(&quot;EHT-&quot; + booking.getId() + &quot;-&quot; + UUID.randomUUID());</span>
+<span class="nc" id="L110">            Image qrImage = new Image(ImageDataFactory.create(qrCode));</span>
+<span class="nc" id="L111">            qrImage.setWidth(120);</span>
+<span class="nc" id="L112">            Cell qrCell = new Cell().add(qrImage).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER);</span>
+<span class="nc" id="L113">            footerTable.addCell(qrCell);</span>
+
+<span class="nc" id="L115">            document.add(footerTable);</span>
+
+            // Footer Note
+<span class="nc" id="L118">            document.add(new Paragraph(&quot;\n\n&quot;));</span>
+<span class="nc" id="L119">            document.add(new Paragraph(&quot;Please present this ticket at the entrance. Each QR code is valid for one entry only.&quot;)</span>
+<span class="nc" id="L120">                    .setFontSize(10)</span>
+<span class="nc" id="L121">                    .setFontColor(ColorConstants.GRAY)</span>
+<span class="nc" id="L122">                    .setTextAlignment(TextAlignment.CENTER));</span>
+
+<span class="nc" id="L124">            document.close();</span>
+<span class="nc" id="L125">            return baos.toByteArray();</span>
+<span class="nc" id="L126">        } catch (Exception e) {</span>
+<span class="nc" id="L127">            throw new RuntimeException(&quot;Failed to generate PDF ticket&quot;, e);</span>
+        }
+    }
+
+    private byte[] generateQrCode(String text) throws Exception {
+<span class="nc" id="L132">        QRCodeWriter qrCodeWriter = new QRCodeWriter();</span>
+<span class="nc" id="L133">        BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, 250, 250);</span>
+        
+<span class="nc" id="L135">        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {</span>
+<span class="nc" id="L136">            MatrixToImageWriter.writeToStream(bitMatrix, &quot;PNG&quot;, baos);</span>
+<span class="nc" id="L137">            return baos.toByteArray();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

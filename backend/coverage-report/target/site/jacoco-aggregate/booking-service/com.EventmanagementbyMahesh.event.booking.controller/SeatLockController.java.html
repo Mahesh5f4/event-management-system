@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SeatLockController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.controller</a> &gt; <span class="el_source">SeatLockController.java</span></div><h1>SeatLockController.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.controller;
+
+import com.EventmanagementbyMahesh.event.booking.service.SeatLockService;
+import com.EventmanagementbyMahesh.event.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/seats&quot;)
+@Tag(name = &quot;Seat Lock APIs&quot;, description = &quot;Distributed, Redis-backed seat locking via HTTP REST and WebSocket. Prevents double-booking of seats during checkout.&quot;)
+@SecurityRequirement(name = &quot;Bearer Authentication&quot;)
+public class SeatLockController {
+
+    private final SeatLockService seatLockService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+<span class="nc" id="L30">    public SeatLockController(SeatLockService seatLockService, SimpMessagingTemplate messagingTemplate) {</span>
+<span class="nc" id="L31">        this.seatLockService = seatLockService;</span>
+<span class="nc" id="L32">        this.messagingTemplate = messagingTemplate;</span>
+<span class="nc" id="L33">    }</span>
+
+    @MessageMapping(&quot;/register/{eventId}/{userId}&quot;)
+    public void registerSession(@DestinationVariable Long eventId,
+                                @DestinationVariable String userId,
+                                SimpMessageHeaderAccessor headerAccessor) {
+<span class="nc" id="L39">        headerAccessor.getSessionAttributes().put(&quot;eventId&quot;, eventId);</span>
+<span class="nc" id="L40">        headerAccessor.getSessionAttributes().put(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L41">    }</span>
+
+    @Operation(summary = &quot;Lock a seat&quot;,
+            description = &quot;Atomically locks a specific seat for an event for 5 minutes using Redis SETNX. Returns 409 if the seat is already locked by another user.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Seat locked successfully for 5 minutes&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;409&quot;, description = &quot;Seat is already being held by another user&quot;)
+    })
+    @PostMapping(&quot;/{eventId}/lock&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Boolean&gt;&gt; lockSeat(
+            Authentication auth,
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId,
+            @RequestBody Map&lt;String, String&gt; body) {
+<span class="nc" id="L54">        String seatId = body.get(&quot;seatId&quot;);</span>
+<span class="nc" id="L55">        String userId = auth.getName();</span>
+<span class="nc" id="L56">        boolean locked = seatLockService.lockSeat(eventId, seatId, userId);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (locked) {</span>
+<span class="nc" id="L58">            broadcastUpdate(eventId);</span>
+<span class="nc" id="L59">            return ResponseEntity.ok(ApiResponse.ok(true, &quot;Seat locked for 5 minutes&quot;));</span>
+        } else {
+<span class="nc" id="L61">            return ResponseEntity.status(409).body(ApiResponse.error(&quot;Seat is already being booked by someone else&quot;));</span>
+        }
+    }
+
+    @Operation(summary = &quot;Unlock a seat&quot;,
+            description = &quot;Releases a previously locked seat for a given event. Broadcasts the update via WebSocket.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Seat unlocked successfully&quot;)
+    @PostMapping(&quot;/{eventId}/unlock&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Boolean&gt;&gt; unlockSeat(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId,
+            @RequestBody Map&lt;String, String&gt; body) {
+<span class="nc" id="L72">        String seatId = body.get(&quot;seatId&quot;);</span>
+<span class="nc" id="L73">        seatLockService.unlockSeat(eventId, seatId);</span>
+<span class="nc" id="L74">        broadcastUpdate(eventId);</span>
+<span class="nc" id="L75">        return ResponseEntity.ok(ApiResponse.ok(true, &quot;Seat unlocked&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Unlock multiple seats&quot;,
+            description = &quot;Releases multiple seat locks at once for a given event. Used when a user abandons checkout.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Seats unlocked successfully&quot;)
+    @PostMapping(&quot;/{eventId}/unlock-multiple&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Boolean&gt;&gt; unlockMultiple(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId,
+            @RequestBody Map&lt;String, List&lt;String&gt;&gt; body) {
+<span class="nc" id="L85">        List&lt;String&gt; seatIds = body.get(&quot;seatIds&quot;);</span>
+<span class="nc bnc" id="L86" title="All 4 branches missed.">        if (seatIds != null &amp;&amp; !seatIds.isEmpty()) {</span>
+<span class="nc" id="L87">            seatLockService.unlockMultipleSeats(eventId, seatIds);</span>
+<span class="nc" id="L88">            broadcastUpdate(eventId);</span>
+        }
+<span class="nc" id="L90">        return ResponseEntity.ok(ApiResponse.ok(true, &quot;Seats unlocked&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Get currently locked seats&quot;,
+            description = &quot;Returns a list of all seat IDs currently locked by any user for a given event.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Locked seat list returned&quot;)
+    @GetMapping(&quot;/{eventId}/locked&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;String&gt;&gt;&gt; getLockedSeats(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId) {
+<span class="nc" id="L99">        List&lt;String&gt; lockedSeats = seatLockService.getLockedSeats(eventId);</span>
+<span class="nc" id="L100">        return ResponseEntity.ok(ApiResponse.ok(lockedSeats, &quot;Fetched all currently locked seats&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Get my locked seats&quot;,
+            description = &quot;Returns a list of seat IDs locked by the currently authenticated user for a given event.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Your locked seats returned&quot;)
+    @GetMapping(&quot;/{eventId}/my-locks&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;String&gt;&gt;&gt; getMyLockedSeats(
+            Authentication auth,
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId) {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (auth == null) return ResponseEntity.ok(ApiResponse.ok(List.of(), &quot;Not authenticated&quot;));</span>
+<span class="nc" id="L111">        String userId = auth.getName();</span>
+<span class="nc" id="L112">        List&lt;String&gt; myLockedSeats = seatLockService.getSeatsLockedByUser(eventId, userId);</span>
+<span class="nc" id="L113">        return ResponseEntity.ok(ApiResponse.ok(myLockedSeats, &quot;Fetched your locked seats&quot;));</span>
+    }
+
+    private void broadcastUpdate(Long eventId) {
+<span class="nc" id="L117">        List&lt;String&gt; lockedSeats = seatLockService.getLockedSeats(eventId);</span>
+<span class="nc" id="L118">        messagingTemplate.convertAndSend(&quot;/topic/event/&quot; + eventId + &quot;/seats&quot;, lockedSeats);</span>
+<span class="nc" id="L119">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>AnalyticsController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.controller</a> &gt; <span class="el_source">AnalyticsController.java</span></div><h1>AnalyticsController.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.controller;
+
+import com.EventmanagementbyMahesh.event.booking.entity.Booking;
+import com.EventmanagementbyMahesh.event.booking.entity.BookingStatus;
+import com.EventmanagementbyMahesh.event.booking.repository.BookingRepository;
+import com.EventmanagementbyMahesh.event.booking.dto.RevenueResponse;
+import com.EventmanagementbyMahesh.event.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/admin/analytics&quot;)
+@PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+@Tag(name = &quot;Analytics APIs&quot;, description = &quot;Admin-only endpoints for traffic, user, and revenue analytics. Requires ADMIN role.&quot;)
+@SecurityRequirement(name = &quot;Bearer Authentication&quot;)
+public class AnalyticsController {
+
+    private final BookingRepository bookingRepository;
+    private final RestTemplate restTemplate;
+
+    @Value(&quot;${AUTH_SERVICE_URL:http://localhost:8081}&quot;)
+    private String authServiceUrl;
+
+<span class="nc" id="L38">    public AnalyticsController(BookingRepository bookingRepository, RestTemplate restTemplate) {</span>
+<span class="nc" id="L39">        this.bookingRepository = bookingRepository;</span>
+<span class="nc" id="L40">        this.restTemplate = restTemplate;</span>
+<span class="nc" id="L41">    }</span>
+
+    @Operation(summary = &quot;Get traffic and revenue dashboard&quot;,
+            description = &quot;Returns aggregated analytics: total users, active users (from auth-service), total revenue, and top 3 events by ticket sales.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Analytics returned successfully&quot;)
+    @GetMapping(&quot;/traffic&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; getTrafficAnalytics() {
+<span class="nc" id="L48">        String userUrl = authServiceUrl + &quot;/api/auth/internal/users/analytics&quot;;</span>
+<span class="nc" id="L49">        Map&lt;String, Object&gt; userStats = null;</span>
+        try {
+<span class="nc" id="L51">            userStats = restTemplate.getForObject(userUrl, Map.class);</span>
+<span class="nc" id="L52">        } catch (Exception e) {</span>
+<span class="nc" id="L53">            userStats = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L54">            userStats.put(&quot;totalUsers&quot;, 0L);</span>
+<span class="nc" id="L55">            userStats.put(&quot;activeUsersCount&quot;, 0L);</span>
+<span class="nc" id="L56">            userStats.put(&quot;activeUsers&quot;, List.of());</span>
+<span class="nc" id="L57">        }</span>
+
+<span class="nc" id="L59">        List&lt;Booking&gt; allBookings = bookingRepository.findAll();</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        long totalUsers = userStats.containsKey(&quot;totalUsers&quot;) ? ((Number) userStats.get(&quot;totalUsers&quot;)).longValue() : 0L;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        long activeUsersCount = userStats.containsKey(&quot;activeUsersCount&quot;) ? ((Number) userStats.get(&quot;activeUsersCount&quot;)).longValue() : 0L;</span>
+<span class="nc" id="L62">        Object activeUsers = userStats.getOrDefault(&quot;activeUsers&quot;, List.of());</span>
+
+<span class="nc" id="L64">        double totalRevenue = allBookings.stream()</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                .filter(b -&gt; b.getStatus() == BookingStatus.CONFIRMED)</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                .mapToDouble(b -&gt; b.getEventPrice() != null ? (b.getEventPrice() * b.getTicketCount()) : 0.0)</span>
+<span class="nc" id="L67">                .sum();</span>
+
+<span class="nc" id="L69">        List&lt;Map&lt;String, Object&gt;&gt; topEvents = allBookings.stream()</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                .filter(b -&gt; b.getStatus() == BookingStatus.CONFIRMED)</span>
+<span class="nc" id="L71">                .collect(Collectors.groupingBy(b -&gt; b.getEventId() + &quot;:&quot; + b.getEventTitle(), Collectors.summingInt(Booking::getTicketCount)))</span>
+<span class="nc" id="L72">                .entrySet().stream()</span>
+<span class="nc" id="L73">                .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed())</span>
+<span class="nc" id="L74">                .limit(3)</span>
+<span class="nc" id="L75">                .map(entry -&gt; {</span>
+<span class="nc" id="L76">                    String[] parts = entry.getKey().split(&quot;:&quot;, 2);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    String title = parts.length &gt; 1 ? parts[1] : &quot;Unknown Event&quot;;</span>
+<span class="nc" id="L78">                    double price = allBookings.stream()</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">                            .filter(b -&gt; b.getEventId().toString().equals(parts[0]) &amp;&amp; b.getEventPrice() != null)</span>
+<span class="nc" id="L80">                            .mapToDouble(Booking::getEventPrice).findFirst().orElse(0.0);</span>
+<span class="nc" id="L81">                    Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L82">                    map.put(&quot;title&quot;, title);</span>
+<span class="nc" id="L83">                    map.put(&quot;ticketsSold&quot;, entry.getValue());</span>
+<span class="nc" id="L84">                    map.put(&quot;revenue&quot;, price * entry.getValue());</span>
+<span class="nc" id="L85">                    return map;</span>
+                })
+<span class="nc" id="L87">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L89">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L90">        response.put(&quot;totalUsers&quot;, totalUsers);</span>
+<span class="nc" id="L91">        response.put(&quot;activeUsersCount&quot;, activeUsersCount);</span>
+<span class="nc" id="L92">        response.put(&quot;activeUsers&quot;, activeUsers);</span>
+<span class="nc" id="L93">        response.put(&quot;totalRevenue&quot;, totalRevenue);</span>
+<span class="nc" id="L94">        response.put(&quot;topEvents&quot;, topEvents);</span>
+<span class="nc" id="L95">        response.put(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="nc" id="L96">        return ResponseEntity.ok(response);</span>
+    }
+
+    @Operation(summary = &quot;Get revenue breakdown by event&quot;,
+            description = &quot;Returns revenue grouped by each event, including total tickets sold and revenue generated.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Revenue analytics returned successfully&quot;)
+    @GetMapping(&quot;/revenue&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;RevenueResponse&gt;&gt;&gt; getRevenueAnalytics() {
+<span class="nc" id="L104">        List&lt;RevenueResponse&gt; data = bookingRepository.calculateRevenueByEvent();</span>
+<span class="nc" id="L105">        return ResponseEntity.ok(ApiResponse.ok(data, &quot;Revenue analytics fetched successfully&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

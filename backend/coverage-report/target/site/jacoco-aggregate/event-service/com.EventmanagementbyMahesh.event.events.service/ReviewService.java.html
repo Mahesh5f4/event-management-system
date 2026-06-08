@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ReviewService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">event-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.events.service</a> &gt; <span class="el_source">ReviewService.java</span></div><h1>ReviewService.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.events.service;
+
+import com.EventmanagementbyMahesh.event.events.dto.ReviewRequest;
+import com.EventmanagementbyMahesh.event.events.dto.ReviewResponse;
+import com.EventmanagementbyMahesh.event.events.dto.UserDto;
+import com.EventmanagementbyMahesh.event.events.entity.Event;
+import com.EventmanagementbyMahesh.event.events.entity.Review;
+import com.EventmanagementbyMahesh.event.events.repository.EventRepository;
+import com.EventmanagementbyMahesh.event.events.repository.ReviewRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.EventmanagementbyMahesh.event.events.exception.ReviewException;
+import org.springframework.http.HttpStatus;
+
+@Service
+public class ReviewService {
+
+<span class="nc" id="L23">    private static final Logger logger = LoggerFactory.getLogger(ReviewService.class);</span>
+    private final ReviewRepository reviewRepository;
+    private final EventRepository eventRepository;
+
+<span class="nc" id="L27">    public ReviewService(ReviewRepository reviewRepository, EventRepository eventRepository) {</span>
+<span class="nc" id="L28">        this.reviewRepository = reviewRepository;</span>
+<span class="nc" id="L29">        this.eventRepository = eventRepository;</span>
+<span class="nc" id="L30">    }</span>
+
+    @Transactional
+    public ReviewResponse addReview(Long eventId, UserDto user, ReviewRequest request) {
+<span class="nc" id="L34">        Event event = eventRepository.findById(eventId)</span>
+<span class="nc" id="L35">                .orElseThrow(() -&gt; new ReviewException(&quot;Event not found&quot;, HttpStatus.NOT_FOUND, &quot;EVENT_NOT_FOUND&quot;));</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (reviewRepository.existsByEventIdAndUserId(eventId, user.getId())) {</span>
+<span class="nc" id="L38">            throw new ReviewException(&quot;You have already reviewed this event&quot;, HttpStatus.BAD_REQUEST, &quot;DUPLICATE_REVIEW&quot;);</span>
+        }
+
+<span class="nc" id="L41">        Review review = Review.builder()</span>
+<span class="nc" id="L42">                .event(event)</span>
+<span class="nc" id="L43">                .userId(user.getId())</span>
+<span class="nc" id="L44">                .userName(user.getName())</span>
+<span class="nc" id="L45">                .userAvatar(user.getAvatarUrl())</span>
+<span class="nc" id="L46">                .rating(request.getRating())</span>
+<span class="nc" id="L47">                .comment(request.getComment())</span>
+<span class="nc" id="L48">                .imageUrl(request.getImageUrl())</span>
+<span class="nc" id="L49">                .build();</span>
+
+<span class="nc" id="L51">        logger.info(&quot;Saving new review for event {} by user {}&quot;, eventId, user.getEmail());</span>
+<span class="nc" id="L52">        Review saved = reviewRepository.save(review);</span>
+
+        // Update event rating stats
+<span class="nc" id="L55">        Double avgRating = reviewRepository.getAverageRatingByEventId(eventId);</span>
+<span class="nc" id="L56">        Long count = reviewRepository.getReviewCountByEventId(eventId);</span>
+        
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        event.setAverageRating(avgRating != null ? avgRating : 0.0);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        event.setReviewCount(count != null ? count.intValue() : 0);</span>
+<span class="nc" id="L60">        eventRepository.save(event);</span>
+
+<span class="nc" id="L62">        return toResponse(saved);</span>
+    }
+
+    public List&lt;ReviewResponse&gt; getEventReviews(Long eventId) {
+<span class="nc" id="L66">        return reviewRepository.findByEventIdOrderByCreatedAtDesc(eventId)</span>
+<span class="nc" id="L67">                .stream()</span>
+<span class="nc" id="L68">                .map(this::toResponse)</span>
+<span class="nc" id="L69">                .collect(Collectors.toList());</span>
+    }
+
+    private ReviewResponse toResponse(Review review) {
+<span class="nc" id="L73">        return ReviewResponse.builder()</span>
+<span class="nc" id="L74">                .id(review.getId())</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                .userName(review.getUserName() != null ? review.getUserName() : &quot;Anonymous&quot;)</span>
+<span class="nc" id="L76">                .userAvatar(review.getUserAvatar())</span>
+<span class="nc" id="L77">                .rating(review.getRating())</span>
+<span class="nc" id="L78">                .comment(review.getComment())</span>
+<span class="nc" id="L79">                .imageUrl(review.getImageUrl())</span>
+<span class="nc" id="L80">                .createdAt(review.getCreatedAt())</span>
+<span class="nc" id="L81">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

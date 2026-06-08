@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>UpdateEventRequest.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">event-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.events.dto</a> &gt; <span class="el_source">UpdateEventRequest.java</span></div><h1>UpdateEventRequest.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.events.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.time.LocalDateTime;
+
+@Schema(description = &quot;Request payload for partially updating an event. Only provided fields are updated.&quot;)
+<span class="nc" id="L8">public class UpdateEventRequest {</span>
+    @Schema(description = &quot;Updated event title&quot;, example = &quot;Tech Summit 2026 – Extended&quot;)
+    public String title;
+
+    @Schema(description = &quot;Updated event description&quot;)
+    public String description;
+
+    @Schema(description = &quot;Updated venue location&quot;, example = &quot;Hyderabad International Convention Centre&quot;)
+    public String location;
+
+    @Schema(description = &quot;Updated ticket price in INR&quot;, example = &quot;1299.00&quot;)
+    public Double price;
+
+    @Schema(description = &quot;Updated event start date and time&quot;, example = &quot;2026-09-02T10:00:00&quot;)
+    public LocalDateTime startTime;
+
+    @Schema(description = &quot;Updated event end date and time&quot;, example = &quot;2026-09-02T20:00:00&quot;)
+    public LocalDateTime endTime;
+
+    @Schema(description = &quot;Updated cover image URL&quot;)
+    public String imageUrl;
+
+    @Schema(description = &quot;Updated total seats. Available seats will be adjusted by the difference.&quot;, example = &quot;600&quot;)
+    public Integer totalSeats;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

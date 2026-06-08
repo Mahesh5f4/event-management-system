@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>BookingService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.service</a> &gt; <span class="el_source">BookingService.java</span></div><h1>BookingService.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.service;
+
+import com.EventmanagementbyMahesh.event.booking.dto.*;
+import com.EventmanagementbyMahesh.event.booking.entity.Booking;
+import com.EventmanagementbyMahesh.event.booking.entity.BookingStatus;
+import com.EventmanagementbyMahesh.event.booking.repository.BookingRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.EventmanagementbyMahesh.event.common.metrics.BookingMetrics;
+import com.EventmanagementbyMahesh.event.common.service.EmailService;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class BookingService {
+
+    private static final int MAX_RETRIES = 15;
+    private static final String LOCK_KEY_PREFIX = &quot;lock:event:&quot;;
+
+    @Value(&quot;${AUTH_SERVICE_URL:http://localhost:8081}&quot;)
+    private String authServiceUrl;
+
+    @Value(&quot;${EVENT_SERVICE_URL:http://localhost:8082}&quot;)
+    private String eventServiceUrl;
+
+    private final BookingRepository bookingRepo;
+    private final SeatLockService seatLockService;
+    private final BookingMetrics bookingMetrics;
+    private final StringRedisTemplate redisTemplate;
+    private final EmailService emailService;
+    private final RestTemplate restTemplate;
+
+    public BookingService(BookingRepository bookingRepo,
+                          SeatLockService seatLockService,
+                          BookingMetrics bookingMetrics,
+                          StringRedisTemplate redisTemplate,
+                          EmailService emailService,
+<span class="nc" id="L46">                          RestTemplate restTemplate) {</span>
+<span class="nc" id="L47">        this.bookingRepo = bookingRepo;</span>
+<span class="nc" id="L48">        this.seatLockService = seatLockService;</span>
+<span class="nc" id="L49">        this.bookingMetrics = bookingMetrics;</span>
+<span class="nc" id="L50">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L51">        this.emailService = emailService;</span>
+<span class="nc" id="L52">        this.restTemplate = restTemplate;</span>
+<span class="nc" id="L53">    }</span>
+
+    /**
+     * Book tickets with optimistic locking + retry logic.
+     */
+    @CacheEvict(value = {&quot;events&quot;, &quot;event&quot;}, allEntries = true)
+    public BookingResponse bookTickets(String userEmail, BookingRequest req) {
+        // Fetch UserDto via REST
+<span class="nc" id="L61">        String userUrl = authServiceUrl + &quot;/api/auth/internal/users/by-email?email=&quot; + userEmail;</span>
+<span class="nc" id="L62">        UserDto user = restTemplate.getForObject(userUrl, UserDto.class);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L64">            throw new RuntimeException(&quot;User not found&quot;);</span>
+        }
+
+<span class="nc" id="L67">        String lockKey = LOCK_KEY_PREFIX + req.eventId;</span>
+<span class="nc" id="L68">        String lockValue = UUID.randomUUID().toString();</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (int attempt = 0; attempt &lt; MAX_RETRIES; attempt++) {</span>
+            // Attempt to acquire Redis Lock
+<span class="nc" id="L72">            Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, Duration.ofSeconds(10));</span>
+            
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (Boolean.TRUE.equals(acquired)) {</span>
+                try {
+<span class="nc" id="L76">                    BookingResponse response = attemptBooking(user, req);</span>
+<span class="nc" id="L77">                    bookingMetrics.incrementSuccess();</span>
+                    
+                    // Send Email Confirmation
+<span class="nc" id="L80">                    emailService.sendBookingConfirmation(</span>
+<span class="nc" id="L81">                        user.getEmail(),</span>
+                        response.eventTitle,
+<span class="nc" id="L83">                        String.join(&quot;, &quot;, response.seats),</span>
+<span class="nc" id="L84">                        response.ticketCount,</span>
+<span class="nc" id="L85">                        response.eventPrice * response.ticketCount</span>
+                    );
+                    
+<span class="nc" id="L88">                    return response;</span>
+<span class="nc" id="L89">                } catch (Exception e) {</span>
+<span class="nc bnc" id="L90" title="All 10 branches missed.">                    if (e.getMessage() != null &amp;&amp; (e.getMessage().contains(&quot;Conflict&quot;) || e.getMessage().contains(&quot;Optimistic&quot;) || e.getMessage().contains(&quot;500&quot;) || e.getMessage().contains(&quot;409&quot;))) {</span>
+                        // Fall through to retry logic
+                    } else {
+<span class="nc" id="L93">                        bookingMetrics.incrementFailure(e.getMessage());</span>
+<span class="nc" id="L94">                        throw e;</span>
+                    }
+                } finally {
+                    // Release lock only if we own it
+<span class="nc" id="L98">                    String currentLockValue = redisTemplate.opsForValue().get(lockKey);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                    if (lockValue.equals(currentLockValue)) {</span>
+<span class="nc" id="L100">                        redisTemplate.delete(lockKey);</span>
+                    }
+                }
+            }
+
+            // Back-off and Retry
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (attempt == MAX_RETRIES - 1) {</span>
+<span class="nc" id="L107">                bookingMetrics.incrementFailure(&quot;concurrency_limit&quot;);</span>
+<span class="nc" id="L108">                throw new IllegalStateException(&quot;Booking failed due to high concurrency. Please try again.&quot;);</span>
+            }
+            
+<span class="nc" id="L111">            try { Thread.sleep(50L + (long)(Math.random() * 50)); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }</span>
+        }
+<span class="nc" id="L113">        bookingMetrics.incrementFailure(&quot;unknown&quot;);</span>
+<span class="nc" id="L114">        throw new IllegalStateException(&quot;Booking failed. Please try again.&quot;);</span>
+    }
+
+    @Transactional
+    protected BookingResponse attemptBooking(UserDto user, BookingRequest req) {
+        // 1. Fetch fresh event state via REST
+<span class="nc" id="L120">        String eventUrl = eventServiceUrl + &quot;/api/events/internal/&quot; + req.eventId;</span>
+<span class="nc" id="L121">        EventResponse event = restTemplate.getForObject(eventUrl, EventResponse.class);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (event == null) {</span>
+<span class="nc" id="L123">            throw new RuntimeException(&quot;Event not found&quot;);</span>
+        }
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (event.getAvailableSeats() &lt; req.ticketCount) {</span>
+<span class="nc" id="L127">            throw new RuntimeException(&quot;Not enough seats available. Requested: &quot;</span>
+<span class="nc" id="L128">                    + req.ticketCount + &quot;, Available: &quot; + event.getAvailableSeats());</span>
+        }
+
+        // 2. Deduct seats in event-service via HTTP PUT
+<span class="nc" id="L132">        String deductUrl = eventServiceUrl + &quot;/api/events/internal/&quot; + req.eventId + &quot;/deduct-seats?count=&quot; + req.ticketCount;</span>
+<span class="nc" id="L133">        restTemplate.put(deductUrl, null);</span>
+
+        // 3. Save Booking in local database
+<span class="nc" id="L136">        Booking booking = new Booking();</span>
+<span class="nc" id="L137">        booking.setEventId(event.getId());</span>
+<span class="nc" id="L138">        booking.setUserId(user.getId());</span>
+<span class="nc" id="L139">        booking.setUserEmail(user.getEmail());</span>
+<span class="nc" id="L140">        booking.setTicketCount(req.ticketCount);</span>
+        
+        // Take snapshot of event details for historical preservation
+<span class="nc" id="L143">        booking.setEventTitle(event.getTitle());</span>
+<span class="nc" id="L144">        booking.setEventLocation(event.getLocation());</span>
+<span class="nc" id="L145">        booking.setEventTime(event.getStartTime().toString());</span>
+<span class="nc" id="L146">        booking.setImageUrl(event.getImageUrl());</span>
+<span class="nc" id="L147">        booking.setEventPrice(event.getPrice());</span>
+        
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        if (req.seats != null &amp;&amp; !req.seats.isEmpty()) {</span>
+<span class="nc" id="L150">            booking.setSeats(String.join(&quot;,&quot;, req.seats));</span>
+        }
+        
+<span class="nc" id="L153">        Booking saved = bookingRepo.save(booking);</span>
+
+<span class="nc bnc" id="L155" title="All 4 branches missed.">        if (req.seats != null &amp;&amp; !req.seats.isEmpty()) {</span>
+<span class="nc" id="L156">            seatLockService.unlockMultipleSeats(event.getId(), req.seats);</span>
+        }
+
+        // Evict cache to ensure fresh data on next fetch
+<span class="nc" id="L160">        evictUserBookingsCache(user.getEmail());</span>
+
+<span class="nc" id="L162">        return toResponse(saved, event);</span>
+    }
+
+    @CacheEvict(value = &quot;userBookingsV2&quot;, key = &quot;#userEmail&quot;)
+    public void evictUserBookingsCache(String userEmail) {
+        // Just for cache eviction
+<span class="nc" id="L168">    }</span>
+
+    public Page&lt;BookingResponse&gt; getMyBookings(String userEmail, Pageable pageable) {
+<span class="nc" id="L171">        return bookingRepo.findByUserEmail(userEmail, pageable)</span>
+<span class="nc" id="L172">                .map(this::toResponse);</span>
+    }
+
+    public List&lt;String&gt; getBookedSeatsForEvent(Long eventId) {
+<span class="nc" id="L176">        return bookingRepo.findByEventIdAndStatus(eventId, BookingStatus.CONFIRMED)</span>
+<span class="nc" id="L177">                .stream()</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                .filter(b -&gt; b.getSeats() != null)</span>
+<span class="nc" id="L179">                .flatMap(b -&gt; List.of(b.getSeats().split(&quot;,&quot;)).stream())</span>
+<span class="nc" id="L180">                .toList();</span>
+    }
+
+    private BookingResponse toResponse(Booking b) {
+<span class="nc" id="L184">        return toResponse(b, null);</span>
+    }
+
+    private BookingResponse toResponse(Booking b, EventResponse event) {
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        List&lt;String&gt; seatList = b.getSeats() != null ? </span>
+<span class="nc" id="L189">            List.of(b.getSeats().split(&quot;,&quot;)) : List.of();</span>
+            
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        String title = event != null ? event.getTitle() : b.getEventTitle();</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        String location = event != null ? event.getLocation() : b.getEventLocation();</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        String time = event != null ? event.getStartTime().toString() : b.getEventTime();</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        Double price = event != null ? event.getPrice() : b.getEventPrice();</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        String img = event != null ? event.getImageUrl() : b.getImageUrl();</span>
+
+<span class="nc" id="L197">        return new BookingResponse(</span>
+<span class="nc" id="L198">                b.getId(), b.getEventId(), title, location, time, price, b.getUserId(),</span>
+<span class="nc" id="L199">                b.getUserEmail(), b.getTicketCount(), seatList, b.getStatus().name()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SeatLockService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.service</a> &gt; <span class="el_source">SeatLockService.java</span></div><h1>SeatLockService.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.service;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+@Service
+public class SeatLockService {
+
+    private final StringRedisTemplate redisTemplate;
+    private static final String LOCK_KEY_PREFIX = &quot;seat_lock:&quot;;
+    private static final long LOCK_TIMEOUT_MINUTES = 5;
+
+<span class="nc" id="L18">    public SeatLockService(StringRedisTemplate redisTemplate) {</span>
+<span class="nc" id="L19">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L20">    }</span>
+
+    public boolean lockSeat(Long eventId, String seatId, String userId) {
+        try {
+<span class="nc" id="L24">            String key = LOCK_KEY_PREFIX + eventId + &quot;:&quot; + seatId;</span>
+<span class="nc" id="L25">            Boolean success = redisTemplate.opsForValue().setIfAbsent(key, userId, LOCK_TIMEOUT_MINUTES, TimeUnit.MINUTES);</span>
+<span class="nc bnc" id="L26" title="All 4 branches missed.">            return success != null &amp;&amp; success;</span>
+<span class="nc" id="L27">        } catch (Exception e) {</span>
+<span class="nc" id="L28">            return false;</span>
+        }
+    }
+
+    public void unlockSeat(Long eventId, String seatId) {
+        try {
+<span class="nc" id="L34">            String key = LOCK_KEY_PREFIX + eventId + &quot;:&quot; + seatId;</span>
+<span class="nc" id="L35">            redisTemplate.delete(key);</span>
+<span class="nc" id="L36">        } catch (Exception e) {}</span>
+<span class="nc" id="L37">    }</span>
+
+    public void unlockMultipleSeats(Long eventId, List&lt;String&gt; seatIds) {
+        try {
+<span class="nc" id="L41">            List&lt;String&gt; keys = seatIds.stream()</span>
+<span class="nc" id="L42">                    .map(id -&gt; LOCK_KEY_PREFIX + eventId + &quot;:&quot; + id)</span>
+<span class="nc" id="L43">                    .collect(Collectors.toList());</span>
+<span class="nc" id="L44">            redisTemplate.delete(keys);</span>
+<span class="nc" id="L45">        } catch (Exception e) {}</span>
+<span class="nc" id="L46">    }</span>
+
+    public List&lt;String&gt; getLockedSeats(Long eventId) {
+        try {
+<span class="nc" id="L50">            String pattern = LOCK_KEY_PREFIX + eventId + &quot;:*&quot;;</span>
+<span class="nc" id="L51">            Set&lt;String&gt; keys = redisTemplate.keys(pattern);</span>
+<span class="nc bnc" id="L52" title="All 4 branches missed.">            if (keys == null || keys.isEmpty()) return List.of();</span>
+
+<span class="nc" id="L54">            return keys.stream()</span>
+<span class="nc" id="L55">                    .map(key -&gt; key.substring(key.lastIndexOf(&quot;:&quot;) + 1))</span>
+<span class="nc" id="L56">                    .collect(Collectors.toList());</span>
+<span class="nc" id="L57">        } catch (Exception e) {</span>
+<span class="nc" id="L58">            return List.of();</span>
+        }
+    }
+
+    public List&lt;String&gt; getSeatsLockedByUser(Long eventId, String userId) {
+        try {
+<span class="nc" id="L64">            String pattern = LOCK_KEY_PREFIX + eventId + &quot;:*&quot;;</span>
+<span class="nc" id="L65">            Set&lt;String&gt; keys = redisTemplate.keys(pattern);</span>
+<span class="nc bnc" id="L66" title="All 4 branches missed.">            if (keys == null || keys.isEmpty()) return List.of();</span>
+
+<span class="nc" id="L68">            return keys.stream()</span>
+<span class="nc" id="L69">                    .filter(key -&gt; userId.equals(redisTemplate.opsForValue().get(key)))</span>
+<span class="nc" id="L70">                    .map(key -&gt; key.substring(key.lastIndexOf(&quot;:&quot;) + 1))</span>
+<span class="nc" id="L71">                    .collect(Collectors.toList());</span>
+<span class="nc" id="L72">        } catch (Exception e) {</span>
+<span class="nc" id="L73">            return List.of();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

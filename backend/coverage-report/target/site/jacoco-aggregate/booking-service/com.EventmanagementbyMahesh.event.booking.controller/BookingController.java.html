@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>BookingController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">booking-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.booking.controller</a> &gt; <span class="el_source">BookingController.java</span></div><h1>BookingController.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.booking.controller;
+
+import com.EventmanagementbyMahesh.event.booking.dto.*;
+import com.EventmanagementbyMahesh.event.booking.repository.BookingRepository;
+import com.EventmanagementbyMahesh.event.booking.service.BookingService;
+import com.EventmanagementbyMahesh.event.common.ApiResponse;
+import com.EventmanagementbyMahesh.event.common.config.RabbitMQConfig;
+import com.EventmanagementbyMahesh.event.common.security.RateLimiterService;
+import com.EventmanagementbyMahesh.event.booking.service.PdfTicketService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/bookings&quot;)
+@Tag(name = &quot;Booking APIs&quot;, description = &quot;Ticket booking, status polling, seat querying, and PDF ticket download&quot;)
+@SecurityRequirement(name = &quot;Bearer Authentication&quot;)
+public class BookingController {
+
+    private final BookingService service;
+    private final BookingRepository bookingRepo;
+    private final RateLimiterService rateLimiter;
+    private final RabbitTemplate rabbitTemplate;
+    private final StringRedisTemplate redisTemplate;
+    private final PdfTicketService pdfTicketService;
+
+    public BookingController(BookingService service,
+                             BookingRepository bookingRepo,
+                             RateLimiterService rateLimiter,
+                             RabbitTemplate rabbitTemplate,
+                             StringRedisTemplate redisTemplate,
+<span class="nc" id="L48">                             PdfTicketService pdfTicketService) {</span>
+<span class="nc" id="L49">        this.service = service;</span>
+<span class="nc" id="L50">        this.bookingRepo = bookingRepo;</span>
+<span class="nc" id="L51">        this.rateLimiter = rateLimiter;</span>
+<span class="nc" id="L52">        this.rabbitTemplate = rabbitTemplate;</span>
+<span class="nc" id="L53">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L54">        this.pdfTicketService = pdfTicketService;</span>
+<span class="nc" id="L55">    }</span>
+
+    @Operation(summary = &quot;Create a booking (async)&quot;,
+            description = &quot;Initiates an asynchronous booking request via RabbitMQ. Returns a correlationId to poll for status. Rate-limited to 500 requests per minute per user.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;202&quot;, description = &quot;Booking request accepted and queued for processing&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;429&quot;, description = &quot;Rate limit exceeded – too many booking attempts&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;401&quot;, description = &quot;Not authenticated&quot;)
+    })
+    @PostMapping
+    public ResponseEntity&lt;?&gt; book(Authentication auth, @RequestBody BookingRequest req) {
+<span class="nc" id="L66">        String email = auth.getName();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (!rateLimiter.isAllowed(&quot;booking:&quot; + email, 500, 60)) {</span>
+<span class="nc" id="L68">            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)</span>
+<span class="nc" id="L69">                    .body(ApiResponse.error(&quot;Too many booking attempts. Please wait a minute.&quot;));</span>
+        }
+<span class="nc" id="L71">        BookingMessage message = new BookingMessage(email, req);</span>
+<span class="nc" id="L72">        redisTemplate.opsForValue().set(&quot;booking_status:&quot; + message.correlationId, &quot;PENDING&quot;);</span>
+<span class="nc" id="L73">        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message);</span>
+<span class="nc" id="L74">        return ResponseEntity.accepted().body(ApiResponse.ok(</span>
+<span class="nc" id="L75">            java.util.Map.of(&quot;bookingId&quot;, message.correlationId, &quot;status&quot;, &quot;PENDING&quot;),</span>
+            &quot;Booking request accepted and queued&quot;
+        ));
+    }
+
+    @Operation(summary = &quot;Poll booking status&quot;,
+            description = &quot;Checks the current processing status of an async booking by its correlationId. Status can be: PENDING, CONFIRMED, FAILED.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Status fetched successfully&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;404&quot;, description = &quot;Booking correlationId not found&quot;)
+    })
+    @GetMapping(&quot;/status/{correlationId}&quot;)
+    public ResponseEntity&lt;?&gt; getStatus(
+            @Parameter(description = &quot;The correlationId returned when the booking was created&quot;) @PathVariable String correlationId) {
+<span class="nc" id="L89">        String status = redisTemplate.opsForValue().get(&quot;booking_status:&quot; + correlationId);</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (status == null) return ResponseEntity.notFound().build();</span>
+<span class="nc" id="L91">        String message = redisTemplate.opsForValue().get(&quot;booking_message:&quot; + correlationId);</span>
+<span class="nc" id="L92">        String id = redisTemplate.opsForValue().get(&quot;booking_id:&quot; + correlationId);</span>
+<span class="nc" id="L93">        return ResponseEntity.ok(ApiResponse.ok(</span>
+<span class="nc bnc" id="L94" title="All 4 branches missed.">            java.util.Map.of(&quot;status&quot;, status, &quot;message&quot;, message != null ? message : &quot;&quot;, &quot;id&quot;, id != null ? id : &quot;&quot;),</span>
+            &quot;Booking status fetched&quot;
+        ));
+    }
+
+    @Operation(summary = &quot;Get booked seat IDs for an event&quot;,
+            description = &quot;Returns a list of seat IDs that have already been booked for a given event.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Booked seats returned&quot;)
+    @GetMapping(&quot;/event/{eventId}/seats&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;String&gt;&gt;&gt; getBookedSeats(
+            @Parameter(description = &quot;Event ID&quot;) @PathVariable Long eventId) {
+<span class="nc" id="L105">        List&lt;String&gt; seats = service.getBookedSeatsForEvent(eventId);</span>
+<span class="nc" id="L106">        return ResponseEntity.ok(ApiResponse.ok(seats, &quot;Booked seats fetched&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Get my bookings&quot;,
+            description = &quot;Returns a paginated list of all bookings made by the currently authenticated user.&quot;)
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;Bookings fetched successfully&quot;)
+    @GetMapping
+    public ResponseEntity&lt;ApiResponse&lt;Page&lt;BookingResponse&gt;&gt;&gt; getMyBookings(
+            Authentication auth,
+            @Parameter(description = &quot;Page number (0-indexed)&quot;, example = &quot;0&quot;) @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @Parameter(description = &quot;Page size&quot;, example = &quot;10&quot;) @RequestParam(defaultValue = &quot;10&quot;) int size) {
+<span class="nc" id="L117">        String email = auth.getName();</span>
+<span class="nc" id="L118">        Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;createdAt&quot;).descending());</span>
+<span class="nc" id="L119">        Page&lt;BookingResponse&gt; bookings = service.getMyBookings(email, pageable);</span>
+<span class="nc" id="L120">        return ResponseEntity.ok(ApiResponse.ok(bookings, &quot;Bookings fetched successfully&quot;));</span>
+    }
+
+    @Operation(summary = &quot;Download PDF ticket&quot;,
+            description = &quot;Generates and returns a downloadable PDF ticket for a confirmed booking.&quot;)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;200&quot;, description = &quot;PDF ticket returned as binary attachment&quot;),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = &quot;404&quot;, description = &quot;Booking not found&quot;)
+    })
+    @GetMapping(&quot;/{id}/ticket&quot;)
+    public ResponseEntity&lt;byte[]&gt; downloadTicket(@Parameter(description = &quot;Booking ID&quot;) @PathVariable Long id) {
+<span class="nc" id="L131">        return bookingRepo.findById(id)</span>
+<span class="nc" id="L132">                .map(booking -&gt; {</span>
+<span class="nc" id="L133">                    byte[] pdf = pdfTicketService.generateTicket(booking);</span>
+<span class="nc" id="L134">                    return ResponseEntity.ok()</span>
+<span class="nc" id="L135">                            .header(HttpHeaders.CONTENT_DISPOSITION, &quot;attachment; filename=ticket-&quot; + id + &quot;.pdf&quot;)</span>
+<span class="nc" id="L136">                            .contentType(MediaType.APPLICATION_PDF)</span>
+<span class="nc" id="L137">                            .body(pdf);</span>
+                })
+<span class="nc" id="L139">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

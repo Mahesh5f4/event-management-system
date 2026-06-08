@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">coverage-report</a> &gt; <a href="../index.html" class="el_bundle">auth-service</a> &gt; <a href="index.source.html" class="el_package">com.EventmanagementbyMahesh.event.auth.entity</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.EventmanagementbyMahesh.event.auth.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = &quot;users&quot;, indexes = {
+        @Index(name = &quot;idx_email&quot;, columnList = &quot;email&quot;, unique = true)
+})
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String avatarUrl;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    private LocalDateTime lastActive;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+<span class="nc" id="L30">    @Column(nullable = true, updatable = false)</span>
+<span class="nc" id="L31">    private LocalDateTime createdAt = LocalDateTime.now();</span>
+
+    private String otp;
+    private LocalDateTime otpExpiry;
+
+<span class="nc" id="L36">    public User() {}</span>
+
+<span class="nc" id="L38">    public Long getId() { return id; }</span>
+<span class="nc" id="L39">    public String getName() { return name; }</span>
+<span class="nc" id="L40">    public String getEmail() { return email; }</span>
+<span class="nc" id="L41">    public String getPassword() { return password; }</span>
+<span class="nc" id="L42">    public Role getRole() { return role; }</span>
+<span class="nc" id="L43">    public String getOtp() { return otp; }</span>
+<span class="nc" id="L44">    public LocalDateTime getOtpExpiry() { return otpExpiry; }</span>
+<span class="nc" id="L45">    public LocalDateTime getLastActive() { return lastActive; }</span>
+<span class="nc" id="L46">    public LocalDateTime getCreatedAt() { return createdAt; }</span>
+
+<span class="nc" id="L48">    public void setId(Long id) { this.id = id; }</span>
+<span class="nc" id="L49">    public void setName(String name) { this.name = name; }</span>
+<span class="nc" id="L50">    public String getAvatarUrl() { return avatarUrl; }</span>
+<span class="nc" id="L51">    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }</span>
+<span class="nc" id="L52">    public void setEmail(String email) { this.email = email; }</span>
+<span class="nc" id="L53">    public void setPassword(String password) { this.password = password; }</span>
+<span class="nc" id="L54">    public void setRole(Role role) { this.role = role; }</span>
+<span class="nc" id="L55">    public void setOtp(String otp) { this.otp = otp; }</span>
+<span class="nc" id="L56">    public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }</span>
+<span class="nc" id="L57">    public void setLastActive(LocalDateTime lastActive) { this.lastActive = lastActive; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
