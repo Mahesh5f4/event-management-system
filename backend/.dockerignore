@@ -35,7 +35,6 @@ docs/
 # ─── Scratch & Backup Directories ──────────────────────────────
 scratch/
 src_backup_monolith/
-coverage-report/
 
 # ─── OS Files ──────────────────────────────────────────────────
 .DS_Store
