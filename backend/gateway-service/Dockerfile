@@ -9,17 +9,15 @@ FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
 # Copy parent POM (multi-module project descriptor)
-COPY pom.xml ./pom.xml
-
-# Gateway does NOT depend on common-library directly (no JPA, etc.)
-# but we still need to resolve the parent POM modules correctly.
-# Copy common-library POM only (src not needed — not a dependency of gateway)
+COPY pom.xml ./
 COPY common-library/pom.xml ./common-library/pom.xml
-
-# Copy gateway-service POM
+COPY auth-service/pom.xml ./auth-service/pom.xml
+COPY event-service/pom.xml ./event-service/pom.xml
+COPY booking-service/pom.xml ./booking-service/pom.xml
 COPY gateway-service/pom.xml ./gateway-service/pom.xml
+COPY coverage-report/pom.xml ./coverage-report/pom.xml
+COPY e2e-tests/pom.xml ./e2e-tests/pom.xml
 
-# Download dependencies (cached layer)
 RUN mvn dependency:go-offline \
     -pl gateway-service \
     -am \

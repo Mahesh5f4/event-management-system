@@ -8,15 +8,15 @@ FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
 # Copy parent POM (multi-module project descriptor)
-COPY pom.xml ./pom.xml
-
-# Copy common-library POM (required dependency)
+COPY pom.xml ./
 COPY common-library/pom.xml ./common-library/pom.xml
-
-# Copy event-service POM
+COPY auth-service/pom.xml ./auth-service/pom.xml
 COPY event-service/pom.xml ./event-service/pom.xml
+COPY booking-service/pom.xml ./booking-service/pom.xml
+COPY gateway-service/pom.xml ./gateway-service/pom.xml
+COPY coverage-report/pom.xml ./coverage-report/pom.xml
+COPY e2e-tests/pom.xml ./e2e-tests/pom.xml
 
-# Download dependencies (cached layer — only invalidated on POM change)
 RUN mvn dependency:go-offline \
     -pl common-library,event-service \
     -am \

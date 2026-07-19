@@ -8,17 +8,15 @@ FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
 # Step 1: Copy parent POM (defines the multi-module project)
-COPY pom.xml ./pom.xml
-
-# Step 2: Copy common-library POM (dependency of auth-service)
+COPY pom.xml ./
 COPY common-library/pom.xml ./common-library/pom.xml
-
-# Step 3: Copy auth-service POM
 COPY auth-service/pom.xml ./auth-service/pom.xml
+COPY event-service/pom.xml ./event-service/pom.xml
+COPY booking-service/pom.xml ./booking-service/pom.xml
+COPY gateway-service/pom.xml ./gateway-service/pom.xml
+COPY coverage-report/pom.xml ./coverage-report/pom.xml
+COPY e2e-tests/pom.xml ./e2e-tests/pom.xml
 
-# Step 4: Download all dependencies for these modules only.
-#         This layer is CACHED unless the POM files change,
-#         dramatically speeding up rebuilds.
 RUN mvn dependency:go-offline \
     -pl common-library,auth-service \
     -am \
