@@ -100,6 +100,7 @@ class ChatRequest(BaseModel):
     
 class ChatResponse(BaseModel):
     answer: str
+    sources: List[str] = []
 
 def init_rag():
     global vector_store, llm
@@ -147,9 +148,11 @@ def chat_with_bot(req: ChatRequest):
         # Retrieve top relevant events
         docs = vector_store.similarity_search(req.query, k=4)
         context = "\n\n".join([d.page_content for d in docs])
+        sources = list(set([d.metadata.get("title") for d in docs if d.metadata.get("title")]))
         
-        prompt = f"""You are a helpful assistant for EventHub, an event management and booking platform.
-Use the following context about our current events to answer the user's question. If you don't know the answer based on the context, say so. Keep your answer friendly and concise. Do not use markdown headers.
+        prompt = f"""You are a Retrieval-Augmented Generation (RAG) assistant for EventHub.
+Based strictly on the retrieved context from our database, answer the user's question. 
+If the answer is not in the context, politely say that you don't know based on the provided events. Keep your answer friendly and concise.
 
 Context:
 {context}
@@ -160,7 +163,7 @@ Question:
 Answer:"""
         
         response = llm.invoke(prompt)
-        return ChatResponse(answer=response.content)
+        return ChatResponse(answer=response.content, sources=sources)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

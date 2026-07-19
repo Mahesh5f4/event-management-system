@@ -39,7 +39,7 @@ const Chatbot = () => {
       if (!response.ok) throw new Error('Failed to fetch response');
       const data = await response.json();
       
-      setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.answer, sources: data.sources }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I am having trouble connecting right now. Please try again later!' }]);
     } finally {
@@ -72,7 +72,7 @@ const Chatbot = () => {
                 </div>
                 <div>
                   <h3 className="text-white font-medium text-sm">EventHub AI</h3>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Always Online</p>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">RAG Assistant Active</p>
                 </div>
               </div>
               <button 
@@ -93,6 +93,16 @@ const Chatbot = () => {
                       : 'bg-white/5 text-white border border-white/10 rounded-tl-sm'
                   }`}>
                     {msg.content}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 pt-2 border-t border-white/10">
+                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-1">Retrieved Sources</span>
+                        <div className="flex flex-wrap gap-1">
+                          {msg.sources.map((s, idx) => (
+                            <span key={idx} className="bg-white/10 px-2 py-0.5 rounded text-[10px] text-white/70">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
