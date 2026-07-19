@@ -1,7 +1,7 @@
 package com.EventmanagementbyMahesh.event.auth.config;
 
-import com.EventmanagementbyMahesh.event.auth.model.Role;
-import com.EventmanagementbyMahesh.event.auth.model.User;
+import com.EventmanagementbyMahesh.event.auth.entity.Role;
+import com.EventmanagementbyMahesh.event.auth.entity.User;
 import com.EventmanagementbyMahesh.event.auth.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
