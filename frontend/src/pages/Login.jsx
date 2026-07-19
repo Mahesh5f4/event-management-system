@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { login, googleLogin, clearError } from '../store/slices/authSlice';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GoogleLogin as GoogleLoginButton } from '@react-oauth/google';
@@ -12,7 +12,9 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, error } = useAppSelector(state => state.auth);
+  const redirectMessage = location.state?.message;
 
   useEffect(() => {
     if (user) navigate('/');
@@ -42,6 +44,12 @@ const Login = () => {
           <h2 className="text-3xl font-medium text-white mb-2">Welcome Back</h2>
           <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Sign in to continue</p>
         </div>
+
+        {redirectMessage && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-3 rounded-xl text-sm text-center font-medium mb-6">
+            {redirectMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input

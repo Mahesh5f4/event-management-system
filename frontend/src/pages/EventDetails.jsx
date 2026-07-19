@@ -170,6 +170,10 @@ const EventDetails = () => {
   }, [id, user, dispatch]);
 
   const handleSelectSeat = useCallback(async (seatId, isSelected) => {
+    if (!user) {
+      navigate('/login', { state: { message: 'Please log in to select seats.' } });
+      return;
+    }
     if (isSelected) {
       try {
         await seatLockService.unlock(id, seatId);
@@ -182,7 +186,7 @@ const EventDetails = () => {
         setSelectedSeats(prev => [...prev, seatId].sort());
       } catch (err) { }
     }
-  }, [id, selectedSeats.length, ticketQuantity]);
+  }, [id, selectedSeats.length, ticketQuantity, user, navigate]);
 
   const handleBook = useCallback(async () => {
     if (!user) {
