@@ -10,10 +10,9 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOriginPatterns: "*"
+            allowedOrigins: "*"
             allowedMethods: "*"
             allowedHeaders: "*"
-            allowCredentials: true
       routes:
         # Route to Auth Service
         - id: auth-service
