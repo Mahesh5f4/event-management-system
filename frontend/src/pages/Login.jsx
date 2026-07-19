@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { login, googleLogin, clearError } from '../store/slices/authSlice';
+import { login, googleLogin, clearError, verifyOtp } from '../store/slices/authSlice';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,10 +10,11 @@ import Input from '../components/ui/Input';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [otp, setOtp] = useState('');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, error } = useAppSelector(state => state.auth);
+  const { user, loading, error, tempEmail } = useAppSelector(state => state.auth);
   const redirectMessage = location.state?.message;
 
   useEffect(() => {
@@ -51,74 +52,117 @@ const Login = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="name@example.com"
-            icon={Mail}
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            icon={Lock}
-            required
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          />
-
-          <div className="flex justify-end">
-            <Link to="/forgot-password" size="sm" className="text-white/40 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
-              Forgot Password?
-            </Link>
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium mb-6">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
-              {error}
-            </div>
-          )}
-
-          <Button 
-            type="submit" 
-            className="w-full py-4 text-base" 
-            loading={loading}
-          >
-            Sign In <ArrowRight size={18} className="ml-2" />
-          </Button>
-        </form>
-
-        <div className="my-8 flex items-center gap-4">
-          <div className="h-px flex-1 bg-white/5" />
-          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">or</span>
-          <div className="h-px flex-1 bg-white/5" />
-        </div>
-
-        <div className="flex justify-center">
-           <div className="liquid-glass p-1 rounded-xl w-full">
-              <GoogleLoginButton
-                onSuccess={handleGoogleSuccess}
-                onError={() => console.log('Login Failed')}
-                theme="filled_black"
-                shape="pill"
-                width="100%"
-                text="continue_with"
+        {!tempEmail ? (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="name@example.com"
+                icon={Mail}
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
-           </div>
-        </div>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                icon={Lock}
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
 
-        <div className="mt-10 pt-8 border-t border-white/5 text-center">
-          <p className="text-white/40 text-sm">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-white font-medium hover:underline">
-              Create an account
-            </Link>
-          </p>
-        </div>
+              <div className="flex justify-end">
+                <Link to="/forgot-password" size="sm" className="text-white/40 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors">
+                  Forgot Password?
+                </Link>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full py-4 text-base" 
+                loading={loading}
+              >
+                Sign In <ArrowRight size={18} className="ml-2" />
+              </Button>
+            </form>
+
+            <div className="my-8 flex items-center gap-4">
+              <div className="h-px flex-1 bg-white/5" />
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">or</span>
+              <div className="h-px flex-1 bg-white/5" />
+            </div>
+
+            <div className="flex justify-center">
+               <div className="liquid-glass p-1 rounded-xl w-full">
+                  <GoogleLoginButton
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => console.log('Login Failed')}
+                    theme="filled_black"
+                    shape="pill"
+                    width="100%"
+                    text="continue_with"
+                  />
+               </div>
+            </div>
+
+            <div className="mt-10 pt-8 border-t border-white/5 text-center">
+              <p className="text-white/40 text-sm">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-white font-medium hover:underline">
+                  Create an account
+                </Link>
+              </p>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={(e) => {
+             e.preventDefault();
+             dispatch(verifyOtp({ email: tempEmail, otp }));
+          }} className="space-y-6">
+            <div className="text-center mb-6">
+              <p className="text-white/60 text-sm mb-2">We sent a 6-digit code to</p>
+              <p className="text-white font-medium">{tempEmail}</p>
+            </div>
+            
+            <Input
+              label="OTP Code"
+              type="text"
+              placeholder="123456"
+              icon={Lock}
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+            />
+
+            <Button 
+              type="submit" 
+              className="w-full py-4 text-base" 
+              loading={loading}
+            >
+              Verify OTP <ArrowRight size={18} className="ml-2" />
+            </Button>
+            
+            <div className="text-center mt-4">
+              <button 
+                type="button"
+                onClick={() => window.location.reload()}
+                className="text-[10px] font-bold text-white/40 hover:text-white uppercase tracking-widest"
+              >
+                Cancel and Login Again
+              </button>
+            </div>
+          </form>
+        )}
       </motion.div>
     </div>
   );
