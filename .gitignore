@@ -10,6 +10,27 @@ backend/src/main/resources/application-*.properties
 backend/src/main/resources/application-*.yml
 backend/.env
 backend/.env.local
+backend/.env.production
+
+# Docker — Let's Encrypt certs (contain private keys)
+backend/certbot/
+
+# Database backups (potentially large)
+backend/backups/
+
+# Service log files
+backend/*-service.log
+backend/*-service.error.log
+backend/*-service.run.log
+backend/auth-error.log
+backend/booking-error.log
+backend/event-error.log
+backend/gateway-error.log
+backend/boot-output.log
+backend/log.txt
+backend/output.log
+backend/run-error.log
+backend/startup.log
 
 # Frontend
 frontend/node_modules/

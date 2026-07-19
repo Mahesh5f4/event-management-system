@@ -3,9 +3,9 @@ spring:
     name: event-service
   
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3308/ticketbooking?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&sslMode=PREFERRED}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ticketbooking?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&sslMode=PREFERRED}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:MaheshDatabase}
+    password: ${SPRING_DATASOURCE_PASSWORD:Maheshdatabase}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: EventSystemHikariPool

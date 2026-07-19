@@ -27,6 +27,7 @@
         <module>booking-service</module>
         <module>gateway-service</module>
         <module>coverage-report</module>
+        <module>e2e-tests</module>
     </modules>
 
     <properties>
@@ -39,6 +40,7 @@
         <dotenv.version>3.0.0</dotenv.version>
         <google-api.version>2.0.0</google-api.version>
         <springdoc.version>2.5.0</springdoc.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -120,6 +122,15 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- Testcontainers BOM -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

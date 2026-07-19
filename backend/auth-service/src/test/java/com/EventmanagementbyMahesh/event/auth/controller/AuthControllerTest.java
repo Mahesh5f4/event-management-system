@@ -42,6 +42,9 @@ class AuthControllerTest {
     private AuthService authService;
 
     @MockBean
+    private com.EventmanagementbyMahesh.event.common.security.RateLimiterService rateLimiterService;
+
+    @MockBean
     private JwtUtil jwtUtil; // Required because SecurityConfig loads it in context
 
     @Test
@@ -68,6 +71,7 @@ class AuthControllerTest {
 
         AuthResponse authResponse = new AuthResponse("token", "ADMIN", "admin@example.com", "Admin User", "avatar", java.time.LocalDateTime.now());
         when(authService.login(any(LoginRequest.class))).thenReturn(authResponse);
+        when(rateLimiterService.isAllowed(anyString(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt())).thenReturn(true);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,6 +80,21 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.token").value("token"))
                 .andExpect(jsonPath("$.role").value("ADMIN"))
                 .andExpect(jsonPath("$.email").value("admin@example.com"));
+    }
+
+    @Test
+    void loginUserBlockedByBruteForceProtection() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.email = "hacker@example.com";
+        request.password = "wrongpassword";
+
+        when(rateLimiterService.isAllowed(anyString(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt())).thenReturn(false);
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value("Too many login attempts. Please try again later."));
     }
 
     @Test

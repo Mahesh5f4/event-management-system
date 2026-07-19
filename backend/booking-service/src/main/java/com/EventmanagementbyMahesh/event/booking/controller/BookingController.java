@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class BookingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated")
     })
     @PostMapping
-    public ResponseEntity<?> book(Authentication auth, @RequestBody BookingRequest req) {
+    public ResponseEntity<?> book(Authentication auth, @Valid @RequestBody BookingRequest req) {
         String email = auth.getName();
         if (!rateLimiter.isAllowed("booking:" + email, 500, 60)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

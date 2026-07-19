@@ -29,13 +29,15 @@ public class SecurityConfig {
         JwtFilter jwtFilter = new JwtFilter(jwtUtil);
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/bookings/event/*/seats").permitAll()
                         .requestMatchers("/bookings/status/*").permitAll()
                         .requestMatchers("/seats/*/locked").permitAll()
+                        .requestMatchers("/seats/*/unlock-multiple").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/seats/*/unlock").permitAll()
                         .requestMatchers("/ws-booking/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
@@ -45,15 +47,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
 }

@@ -3,9 +3,9 @@ spring:
     name: booking-service
   
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3308/ticketbooking?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&sslMode=PREFERRED}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ticketbooking?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&sslMode=PREFERRED}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:MaheshDatabase}
+    password: ${SPRING_DATASOURCE_PASSWORD:Maheshdatabase}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: BookingSystemHikariPool
@@ -47,8 +47,8 @@ spring:
   mail:
     host: smtp-relay.brevo.com
     port: 587
-    username: ${SPRING_MAIL_USERNAME:aaf6d9001@smtp-brevo.com}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:your_sendinblue_email@example.com}
+    password: ${SPRING_MAIL_PASSWORD:your_sendinblue_api_key}
     from: ${SPRING_MAIL_FROM:mahesh20104@gmail.com}
     properties:
       mail:
@@ -94,16 +94,16 @@ management:
       prometheus:
         enabled: true
 
-AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:http://localhost:8081}
-EVENT_SERVICE_URL: ${EVENT_SERVICE_URL:http://localhost:8082}
+AUTH_SERVICE_URL: http://localhost:8081
+EVENT_SERVICE_URL: http://localhost:8082
 
 google:
   client:
-    id: ${GOOGLE_CLIENT_ID:}
+    id: ${GOOGLE_CLIENT_ID:584418196078-qt77vi3grcjed1c87c79bl0bto665cpq.apps.googleusercontent.com}
 
 brevo:
   api:
-    key: ${BREVO_API_KEY:}
+    key: ${BREVO_API_KEY:your_brevo_api_key}
 
 springdoc:
   api-docs:

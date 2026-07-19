@@ -38,11 +38,13 @@ public class EventService {
         return toResponse(saved);
     }
 
+    @Cacheable(value = "events", key = "'page:' + #page + ':size:' + #size")
     public Page<EventResponse> getAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return repo.findByEndTimeAfterOrderByStartTimeDesc(LocalDateTime.now(), pageable).map(this::toResponse);
     }
 
+    @Cacheable(value = "event", key = "#id")
     public EventResponse getById(Long id) {
         Event event = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));

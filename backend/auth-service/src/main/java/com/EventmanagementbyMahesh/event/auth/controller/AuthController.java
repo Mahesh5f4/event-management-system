@@ -21,9 +21,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService service;
+    private final com.EventmanagementbyMahesh.event.common.security.RateLimiterService rateLimiter;
 
-    public AuthController(AuthService service) {
+    public AuthController(AuthService service, com.EventmanagementbyMahesh.event.common.security.RateLimiterService rateLimiter) {
         this.service = service;
+        this.rateLimiter = rateLimiter;
     }
 
     @Operation(summary = "Register a new user", description = "Creates a new user account with email and password.")
@@ -40,10 +42,15 @@ public class AuthController {
     @Operation(summary = "Login with email and password", description = "Authenticates a user and returns a JWT or requests OTP verification.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful or OTP required"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "429", description = "Too many failed login attempts")
     })
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest req) {
+        if (!rateLimiter.isAllowed("login:" + req.email, 5, 300)) { // 5 attempts per 5 minutes
+            return ResponseEntity.status(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("message", "Too many login attempts. Please try again later."));
+        }
         return ResponseEntity.ok(service.login(req));
     }
 

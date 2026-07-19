@@ -15,7 +15,7 @@ import lombok.*;
         @Index(name = "idx_start_time", columnList = "startTime"),
         @Index(name = "idx_end_time", columnList = "endTime")
 })
-@SQLDelete(sql = "UPDATE events SET deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE events SET deleted = true WHERE id = ? and version = ?")
 @Where(clause = "deleted = false")
 public class Event {
 
