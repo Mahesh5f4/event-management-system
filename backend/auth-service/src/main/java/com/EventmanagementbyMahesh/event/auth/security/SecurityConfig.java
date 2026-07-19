@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/analytics/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/events/*/reviews").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
