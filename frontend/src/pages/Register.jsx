@@ -19,9 +19,14 @@ const Register = () => {
     return () => dispatch(clearError());
   }, [user, navigate, dispatch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(register(formData));
+    try {
+      await dispatch(register(formData)).unwrap();
+      navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
+    } catch (err) {
+      // Error is handled by redux state and displayed below
+    }
   };
 
   const handleGoogleSuccess = (credentialResponse) => {
