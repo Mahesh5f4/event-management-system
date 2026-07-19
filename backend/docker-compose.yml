@@ -126,6 +126,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - EVENT_SERVICE_URL=${EVENT_SERVICE_URL:-http://event-service:8082}
     # No ports exposed to host — accessed internally by event-service
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\" || exit 1"]

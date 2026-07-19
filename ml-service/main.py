@@ -85,6 +85,85 @@ def recommend_events(request: RecommendationRequest):
     
     return {"recommended_event_ids": recommended_ids}
 
+import os
+import requests
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.schema import Document
+
+# Global variables for RAG
+vector_store = None
+llm = None
+
+class ChatRequest(BaseModel):
+    query: str
+    
+class ChatResponse(BaseModel):
+    answer: str
+
+def init_rag():
+    global vector_store, llm
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("Warning: GEMINI_API_KEY not found. RAG Chatbot will not work.")
+        return
+        
+    try:
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+        
+        # Fetch events from event-service
+        event_service_url = os.environ.get("EVENT_SERVICE_URL", "http://event-service:8082")
+        resp = requests.get(f"{event_service_url}/api/events")
+        if resp.status_code == 200:
+            # Handle standard API response format which wraps in 'data'
+            json_resp = resp.json()
+            events_data = json_resp.get('data', []) if isinstance(json_resp, dict) and 'data' in json_resp else json_resp
+            
+            docs = []
+            for e in events_data:
+                if not isinstance(e, dict): continue
+                content = f"Title: {e.get('title')}\nDescription: {e.get('description')}\nLocation: {e.get('location')}\nPrice: ₹{e.get('price')}\nDate: {e.get('startTime')}\nAvailable Seats: {e.get('availableSeats')}"
+                docs.append(Document(page_content=content, metadata={"id": e.get("id"), "title": e.get("title")}))
+                
+            if docs:
+                vector_store = FAISS.from_documents(docs, embeddings)
+                print(f"Initialized FAISS vector store with {len(docs)} events.")
+        else:
+            print("Failed to fetch events for RAG.")
+    except Exception as e:
+        print(f"Failed to initialize RAG: {e}")
+
+@app.on_event("startup")
+def startup_event():
+    init_rag()
+
+@app.post("/chat", response_model=ChatResponse)
+def chat_with_bot(req: ChatRequest):
+    if not vector_store or not llm:
+        raise HTTPException(status_code=503, detail="RAG Chatbot is not initialized. Check GEMINI_API_KEY.")
+        
+    try:
+        # Retrieve top relevant events
+        docs = vector_store.similarity_search(req.query, k=4)
+        context = "\n\n".join([d.page_content for d in docs])
+        
+        prompt = f"""You are a helpful assistant for EventHub, an event management and booking platform.
+Use the following context about our current events to answer the user's question. If you don't know the answer based on the context, say so. Keep your answer friendly and concise. Do not use markdown headers.
+
+Context:
+{context}
+
+Question:
+{req.query}
+
+Answer:"""
+        
+        response = llm.invoke(prompt)
+        return ChatResponse(answer=response.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     import os

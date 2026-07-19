@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useAppSelector } from './store/hooks';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Chatbot from './components/ui/Chatbot';
 import { AnimatePresence } from 'framer-motion';
 
 // Lazy load pages
@@ -199,6 +200,7 @@ function App() {
         </main>
 
         <Footer />
+        <Chatbot />
       </div>
     </div>
   );
