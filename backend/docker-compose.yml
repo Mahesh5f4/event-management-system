@@ -217,6 +217,8 @@ services:
       SPRING_RABBITMQ_VIRTUAL_HOST: ${SPRING_RABBITMQ_VIRTUAL_HOST:-/}
       # ML service — points to "ml-service" container, not localhost
       ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:8001}
+      # Inter-service URLs
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8081}
       PORT: 8082
       SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 30s
     depends_on:
