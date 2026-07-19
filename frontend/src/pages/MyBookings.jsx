@@ -72,13 +72,6 @@ const BookingCard = memo(({ booking, index, onDownload }) => (
             </div>
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={() => onDownload(booking.bookingId)}
-              className="p-3 rounded-xl liquid-glass text-white/40 hover:text-white transition-all transform-gpu"
-              title="Download Receipt"
-            >
-              <Receipt size={18} />
-            </button>
             <Button 
               variant="primary" 
               size="sm"
