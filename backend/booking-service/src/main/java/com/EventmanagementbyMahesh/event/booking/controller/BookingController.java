@@ -88,7 +88,27 @@ public class BookingController {
     public ResponseEntity<?> getStatus(
             @Parameter(description = "The correlationId returned when the booking was created") @PathVariable String correlationId) {
         String status = redisTemplate.opsForValue().get("booking_status:" + correlationId);
-        if (status == null) return ResponseEntity.notFound().build();
+        
+        // Fallback for Razorpay synchronous flow where correlationId is the actual database ID
+        if (status == null) {
+            try {
+                Long bookingId = Long.parseLong(correlationId);
+                return bookingRepo.findById(bookingId)
+                        .map(b -> {
+                            String mappedStatus = b.getStatus().name();
+                            // Map CONFIRMED to COMPLETED for frontend Redux compatibility
+                            if (mappedStatus.equals("CONFIRMED")) mappedStatus = "COMPLETED";
+                            return ResponseEntity.ok(ApiResponse.ok(
+                                java.util.Map.of("status", mappedStatus, "message", "", "id", b.getId().toString()),
+                                "Booking status fetched"
+                            ));
+                        })
+                        .orElse(ResponseEntity.notFound().build());
+            } catch (NumberFormatException e) {
+                return ResponseEntity.notFound().build();
+            }
+        }
+
         String message = redisTemplate.opsForValue().get("booking_message:" + correlationId);
         String id = redisTemplate.opsForValue().get("booking_id:" + correlationId);
         return ResponseEntity.ok(ApiResponse.ok(
