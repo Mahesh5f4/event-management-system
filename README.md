@@ -1,5 +1,7 @@
 # 🎫 EventHub
 
+**Live Demo:** [https://eventshublimited.netlify.app/](https://eventshublimited.netlify.app/)
+
 [![Backend CI](https://github.com/Mahesh5f4/event-management-system/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Mahesh5f4/event-management-system/actions/workflows/backend-ci.yml)
 [![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -544,6 +546,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 ## 🌐 Live Deployment
 
+*   **Live Application (Frontend)**: [https://eventshublimited.netlify.app/](https://eventshublimited.netlify.app/)
 *   **Backend Base API IP**: `http://13.48.56.253`
 *   **Frontend Deployment**: Deployed on Netlify, connected via Git integration for CD, with all requests to `/api/*` proxied directly to the backend IP `http://13.48.56.253/api/*`.
 *   **Health Check Status Endpoint**: `http://13.48.56.253/actuator/health` (Internal: forwards to the Gateway health verification routing).
