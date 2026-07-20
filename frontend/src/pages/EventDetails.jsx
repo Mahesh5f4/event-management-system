@@ -144,7 +144,9 @@ const EventDetails = () => {
 
     // WebSocket Connection
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(`${API_BASE_URL}/ws-booking`),
+      webSocketFactory: () => new SockJS(`${API_BASE_URL}/ws-booking`, null, {
+        transports: ['websocket', 'xhr-polling']
+      }),
       onConnect: () => {
         if (user) {
           stompClient.publish({
