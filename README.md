@@ -29,11 +29,14 @@
 
 *   **Distributed Seat Locking:** Atomically locks seats during checkout using Redis `SETNX` to prevent concurrent reservation conflicts.
 *   **Asynchronous Processing:** Offloads heavy tasks like PDF ticket generation and email notifications to RabbitMQ, drastically reducing API latency.
+*   **Secure Payment Gateway:** Seamless Razorpay integration for fast, secure, and reliable transaction processing.
 *   **ML-Powered Recommendations:** Dedicated Python microservice providing personalized event recommendations based on user history and event metadata.
+*   **Interactive Account Settings:** Fully featured frontend profile management with dynamic OTP-based password resetting.
 *   **Resilient Microservices:** Domain-driven design split into Auth, Event, Booking, and Gateway services for independent scaling and failure isolation.
 *   **Centralized API Documentation:** Auto-generated OpenAPI 3.0 / Swagger UI aggregated at the API Gateway level.
 *   **Real-time Updates:** WebSocket integration (STOMP) for broadcasting live seat availability updates to all connected clients.
-*   **Robust Security:** Stateless JWT authentication with RSA256 signatures and Google OAuth 2.0 integration.
+*   **Robust Security:** Stateless JWT authentication with RSA256 signatures and Google OAuth 2.0 Single Sign-On (SSO) integration.
+*   **Premium Aesthetic:** Features a responsive, modern "Liquid Glass" UI design language with complex GSAP and Framer Motion micro-animations.
 
 ---
 
@@ -361,6 +364,7 @@ sequenceDiagram
 | **Cache/Locking** | Redis 7.4 | Distributed mutex locks for seats and L2 caching for events. |
 | **Messaging** | RabbitMQ 3.13 | Async communication decoupling booking from notification logic. |
 | **Machine Learning** | Python 3.12, FastAPI | High-performance recommendation engine. |
+| **Payments** | Razorpay API | Secure, production-grade checkout and payment processing gateway. |
 | **Monitoring** | Prometheus, Grafana | System observability and real-time metrics tracking. |
 | **CI/CD** | GitHub Actions, JaCoCo | Automated testing, coverage reporting, and continuous integration. |
 
@@ -1020,7 +1024,8 @@ During popular event sales, multiple users attempt to checkout the exact same se
 *   **Architected and deployed** a highly available distributed event ticketing platform utilizing a Spring Boot microservices architecture (API Gateway, Auth, Event, Booking).
 *   **Engineered a multi-layered concurrency strategy** eliminating double-booking race conditions during high-traffic flash sales using Redis `SETNX` distributed locks and JPA Optimistic Locking.
 *   **Optimized API response times and throughput** by implementing L2 Redis caching for read-heavy operations and RabbitMQ for asynchronous offloading of resource-intensive tasks (PDF generation).
-*   **Implemented robust security protocols** including stateless JWT authentication, Role-Based Access Control, and Redis-backed rate limiting to protect against brute-force attacks.
+*   **Integrated enterprise-grade payment and authentication flows**, including Razorpay for secure checkout processing and Google OAuth 2.0 SSO alongside JWT-based custom auth.
+*   **Built a state-of-the-art frontend experience** utilizing React, Redux, and Framer Motion to deliver a premium "Liquid Glass" UI with real-time WebSocket seat mapping.
 *   **Established comprehensive CI/CD pipelines** via GitHub Actions, integrating multi-module Maven builds, automated testing, and aggregated JaCoCo reporting achieving 70%+ global test coverage.
 
 ---
