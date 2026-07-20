@@ -126,7 +126,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - EVENT_SERVICE_URL=${EVENT_SERVICE_URL:-http://event-service:8082}
     # No ports exposed to host — accessed internally by event-service
     healthcheck:
@@ -274,6 +274,10 @@ services:
       # Inter-service URLs — Docker container names
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8081}
       EVENT_SERVICE_URL: ${EVENT_SERVICE_URL:-http://event-service:8082}
+      # Razorpay Payment Gateway
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
       PORT: 8083
       SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 30s
     depends_on:

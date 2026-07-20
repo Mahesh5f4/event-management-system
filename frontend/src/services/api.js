@@ -55,4 +55,11 @@ export const seatLockService = {
   getMyLocks: (eventId) => api.get(`/seats/${eventId}/my-locks`),
 };
 
+export const paymentService = {
+  createOrder: (data) => api.post('/bookings/payments/create-order', data),
+  verifyPayment: (data) => api.post('/bookings/payments/verify', data),
+  getPayment: (id) => api.get(`/bookings/payments/${id}`),
+  getPaymentByBooking: (bookingId) => api.get(`/bookings/payments/booking/${bookingId}`),
+};
+
 export default api;

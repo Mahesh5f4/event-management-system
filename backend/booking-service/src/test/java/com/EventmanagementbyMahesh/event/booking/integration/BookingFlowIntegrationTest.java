@@ -49,7 +49,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.cache.type=none",
                 "spring.main.allow-bean-definition-overriding=true",
                 "AUTH_SERVICE_URL=http://localhost:8081",
-                "EVENT_SERVICE_URL=http://localhost:8082"
+                "EVENT_SERVICE_URL=http://localhost:8082",
+                "RAZORPAY_KEY_ID=mock_key_id",
+                "RAZORPAY_KEY_SECRET=mock_key_secret",
+                "RAZORPAY_WEBHOOK_SECRET=mock_webhook_secret"
         }
 )
 @AutoConfigureMockMvc

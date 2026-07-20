@@ -40,6 +40,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/seats/*/unlock").permitAll()
                         .requestMatchers("/ws-booking/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // Razorpay webhook — verified by HMAC-SHA256 signature, not JWT
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/payments/webhook").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

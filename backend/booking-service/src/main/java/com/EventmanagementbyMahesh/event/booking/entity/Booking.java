@@ -45,7 +45,11 @@ public class Booking {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
-        this.status = BookingStatus.CONFIRMED;
+        // Only default to CONFIRMED if no status was explicitly set.
+        // PENDING status is set by the payment flow before Razorpay confirmation.
+        if (this.status == null) {
+            this.status = BookingStatus.CONFIRMED;
+        }
     }
 
     // ── Getters & Setters ──────────────────────────────────────

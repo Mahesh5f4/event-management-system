@@ -99,6 +99,7 @@ class BookingControllerTest {
     void bookTicketsBlockedByRateLimiter() throws Exception {
         BookingRequest request = new BookingRequest();
         request.eventId = 1L;
+        request.ticketCount = 2;
 
         when(rateLimiterService.isAllowed(eq("booking:user@example.com"), anyInt(), anyInt())).thenReturn(false);
 

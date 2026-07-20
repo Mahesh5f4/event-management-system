@@ -11,9 +11,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    // ─── Booking Queue (existing) ─────────────────────────────
     public static final String QUEUE = "booking_queue";
     public static final String EXCHANGE = "booking_exchange";
     public static final String ROUTING_KEY = "booking_routingKey";
+
+    // ─── Payment Events ───────────────────────────────────────
+    public static final String PAYMENT_QUEUE = "payment_queue";
+    public static final String PAYMENT_EXCHANGE = "payment_exchange";
+    public static final String PAYMENT_ROUTING_KEY_COMPLETED = "payment.completed";
+    public static final String PAYMENT_ROUTING_KEY_FAILED = "payment.failed";
 
     @Bean
     public Queue queue() {
@@ -40,5 +47,27 @@ public class RabbitMQConfig {
         final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(converter());
         return rabbitTemplate;
+    }
+
+    // ─── Payment Queue Beans ──────────────────────────────────
+
+    @Bean
+    public Queue paymentQueue() {
+        return new Queue(PAYMENT_QUEUE, true);
+    }
+
+    @Bean
+    public TopicExchange paymentExchange() {
+        return new TopicExchange(PAYMENT_EXCHANGE);
+    }
+
+    @Bean
+    public Binding paymentBindingCompleted(Queue paymentQueue, TopicExchange paymentExchange) {
+        return BindingBuilder.bind(paymentQueue).to(paymentExchange).with(PAYMENT_ROUTING_KEY_COMPLETED);
+    }
+
+    @Bean
+    public Binding paymentBindingFailed(Queue paymentQueue, TopicExchange paymentExchange) {
+        return BindingBuilder.bind(paymentQueue).to(paymentExchange).with(PAYMENT_ROUTING_KEY_FAILED);
     }
 }

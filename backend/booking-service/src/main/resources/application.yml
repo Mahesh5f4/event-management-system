@@ -112,3 +112,12 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: method
+
+# ─── Razorpay Payment Gateway ─────────────────────────────────
+# Test Mode: credentials injected from environment variables.
+# Switch to Live by replacing RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET.
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+  key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:placeholder_webhook_secret}
+  currency: INR

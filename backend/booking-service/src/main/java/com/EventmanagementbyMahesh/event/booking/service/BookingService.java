@@ -162,6 +162,94 @@ public class BookingService {
         return toResponse(saved, event);
     }
 
+    /**
+     * Creates a PENDING booking (before Razorpay payment). Called by PaymentService.
+     * Deducts seats optimistically — restored if payment fails.
+     */
+    @Transactional
+    public BookingResponse createPendingBooking(String userEmail, BookingRequest req) {
+        String userUrl = authServiceUrl + "/api/auth/internal/users/by-email?email=" + userEmail;
+        UserDto user = restTemplate.getForObject(userUrl, UserDto.class);
+        if (user == null) throw new RuntimeException("User not found");
+
+        String eventUrl = eventServiceUrl + "/api/events/internal/" + req.eventId;
+        EventResponse event = restTemplate.getForObject(eventUrl, EventResponse.class);
+        if (event == null) throw new RuntimeException("Event not found");
+
+        if (event.getAvailableSeats() < req.ticketCount) {
+            throw new RuntimeException("Not enough seats available. Requested: "
+                    + req.ticketCount + ", Available: " + event.getAvailableSeats());
+        }
+
+        // Deduct seats immediately to prevent overselling during payment window
+        String deductUrl = eventServiceUrl + "/api/events/internal/" + req.eventId
+                + "/deduct-seats?count=" + req.ticketCount;
+        restTemplate.put(deductUrl, null);
+
+        Booking booking = new Booking();
+        booking.setEventId(event.getId());
+        booking.setUserId(user.getId());
+        booking.setUserEmail(user.getEmail());
+        booking.setTicketCount(req.ticketCount);
+        booking.setEventTitle(event.getTitle());
+        booking.setEventLocation(event.getLocation());
+        booking.setEventTime(event.getStartTime().toString());
+        booking.setImageUrl(event.getImageUrl());
+        booking.setEventPrice(event.getPrice());
+        booking.setStatus(BookingStatus.PENDING);
+        if (req.seats != null && !req.seats.isEmpty()) {
+            booking.setSeats(String.join(",", req.seats));
+        }
+
+        Booking saved = bookingRepo.save(booking);
+        return toResponse(saved, event);
+    }
+
+    /**
+     * Confirms a PENDING booking after successful Razorpay payment verification.
+     */
+    @Transactional
+    public void confirmBooking(Long bookingId) {
+        Booking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Cannot confirm booking with status: " + booking.getStatus());
+        }
+        booking.setStatus(BookingStatus.CONFIRMED);
+        bookingRepo.save(booking);
+        if (booking.getSeats() != null && !booking.getSeats().isEmpty()) {
+            seatLockService.unlockMultipleSeats(booking.getEventId(),
+                    List.of(booking.getSeats().split(",")));
+        }
+        evictUserBookingsCache(booking.getUserEmail());
+    }
+
+    /**
+     * Cancels a PENDING booking when payment fails or times out.
+     * Restores deducted seats in event-service.
+     */
+    @Transactional
+    public void cancelBooking(Long bookingId) {
+        Booking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            return; // Already processed
+        }
+        booking.setStatus(BookingStatus.FAILED);
+        bookingRepo.save(booking);
+        // Restore seats — best-effort
+        String restoreUrl = eventServiceUrl + "/api/events/internal/" + booking.getEventId()
+                + "/restore-seats?count=" + booking.getTicketCount();
+        try { restTemplate.put(restoreUrl, null); } catch (Exception e) {
+            System.err.println("[BookingService] Seat restore failed for booking " + bookingId + ": " + e.getMessage());
+        }
+        if (booking.getSeats() != null && !booking.getSeats().isEmpty()) {
+            seatLockService.unlockMultipleSeats(booking.getEventId(),
+                    List.of(booking.getSeats().split(",")));
+        }
+        evictUserBookingsCache(booking.getUserEmail());
+    }
+
     @CacheEvict(value = "userBookingsV2", key = "#userEmail")
     public void evictUserBookingsCache(String userEmail) {
         // Just for cache eviction
