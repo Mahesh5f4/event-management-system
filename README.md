@@ -36,6 +36,9 @@
 *   **Centralized API Documentation:** Auto-generated OpenAPI 3.0 / Swagger UI aggregated at the API Gateway level.
 *   **Real-time Updates:** WebSocket integration (STOMP) for broadcasting live seat availability updates to all connected clients.
 *   **Robust Security:** Stateless JWT authentication with RSA256 signatures and Google OAuth 2.0 Single Sign-On (SSO) integration.
+*   **Digital Passes & PDF Tickets:** Auto-generates downloadable PDF tickets and features a highly polished digital pass UI with "Encrypted Pass Issued" visuals.
+*   **Interactive Stage Mapping:** Provides a dynamic visual stage area and interactive seat selection UI during the booking flow.
+*   **Scheduled State Cleanup:** Utilizes Spring `@Scheduled` background workers to automatically reap expired locks and maintain inventory consistency.
 *   **Premium Aesthetic:** Features a responsive, modern "Liquid Glass" UI design language with complex GSAP and Framer Motion micro-animations.
 
 ---
