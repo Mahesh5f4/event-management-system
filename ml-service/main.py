@@ -113,9 +113,9 @@ def init_rag():
         llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
         
-        # Fetch events from event-service
+        # Fetch events from event-service with a short timeout to prevent circular startup deadlock
         event_service_url = os.environ.get("EVENT_SERVICE_URL", "http://event-service:8082")
-        resp = requests.get(f"{event_service_url}/api/events")
+        resp = requests.get(f"{event_service_url}/api/events", timeout=3)
         if resp.status_code == 200:
             # Handle standard API response format which wraps in 'data'
             json_resp = resp.json()
@@ -135,14 +135,55 @@ def init_rag():
     except Exception as e:
         print(f"Failed to initialize RAG: {e}")
 
+def refresh_vector_store():
+    global vector_store
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("Warning: GEMINI_API_KEY not found. Cannot refresh vector store.")
+        return
+    try:
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+        event_service_url = os.environ.get("EVENT_SERVICE_URL", "http://event-service:8082")
+        resp = requests.get(f"{event_service_url}/api/events", timeout=5)
+        if resp.status_code == 200:
+            json_resp = resp.json()
+            events_data = json_resp.get('data', []) if isinstance(json_resp, dict) and 'data' in json_resp else json_resp
+            docs = []
+            for e in events_data:
+                if not isinstance(e, dict): continue
+                content = f"Title: {e.get('title')}\nDescription: {e.get('description')}\nLocation: {e.get('location')}\nPrice: ₹{e.get('price')}\nDate: {e.get('startTime')}\nAvailable Seats: {e.get('availableSeats')}"
+                docs.append(Document(page_content=content, metadata={"id": e.get("id"), "title": e.get("title")}))
+            if docs:
+                vector_store = FAISS.from_documents(docs, embeddings)
+                print(f"Successfully refreshed FAISS vector store with {len(docs)} events.")
+        else:
+            print("Failed to fetch events for RAG refresh.")
+    except Exception as e:
+        print(f"Failed to refresh RAG vector store: {e}")
+
 @app.on_event("startup")
 def startup_event():
     init_rag()
 
 @app.post("/chat", response_model=ChatResponse)
 def chat_with_bot(req: ChatRequest):
-    if not vector_store or not llm:
-        raise HTTPException(status_code=503, detail="RAG Chatbot is not initialized. Check GEMINI_API_KEY.")
+    global vector_store, llm
+    if not llm:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            try:
+                llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+            except Exception as e:
+                print(f"Failed to initialize LLM on-demand: {e}")
+                
+    if not llm:
+        raise HTTPException(status_code=503, detail="RAG Chatbot LLM is not initialized. Check GEMINI_API_KEY.")
+        
+    if not vector_store:
+        refresh_vector_store()
+        
+    if not vector_store:
+        raise HTTPException(status_code=503, detail="RAG Chatbot vector store is not initialized. Event service may be offline.")
         
     try:
         # Retrieve top relevant events
