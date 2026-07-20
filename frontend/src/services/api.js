@@ -21,6 +21,7 @@ export const authService = {
   verifyOtp: (payload) => api.post('/auth/verify-otp', payload),
   forgotPassword: (payload) => api.post('/auth/forgot-password', payload),
   resetPassword: (payload) => api.post('/auth/reset-password', payload),
+  updateProfile: (payload) => api.put('/auth/profile', payload),
   getUsers: () => api.get('/auth/admin/users'),
 };
 

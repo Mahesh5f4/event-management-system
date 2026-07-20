@@ -96,6 +96,53 @@ export const verifyOtp = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.updateProfile(payload);
+      const data = response.data;
+      
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({ 
+        email: data.email, 
+        role: data.role,
+        name: data.name,
+        avatarUrl: data.avatarUrl,
+        createdAt: data.createdAt
+      }));
+      
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Profile update failed');
+    }
+  }
+);
+
+export const sendChangePasswordOtp = createAsyncThunk(
+  'auth/sendChangePasswordOtp',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.forgotPassword(payload);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to send OTP');
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await authService.resetPassword(payload);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Password reset failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -186,9 +233,51 @@ const authSlice = createSlice({
       .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token;
+        state.user = { 
+          email: action.payload.email, 
+          role: action.payload.role,
+          name: action.payload.name,
+          avatarUrl: action.payload.avatarUrl,
+          createdAt: action.payload.createdAt
+        };
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(sendChangePasswordOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(sendChangePasswordOtp.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(sendChangePasswordOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
+export { updateProfile, sendChangePasswordOtp, changePassword };
 export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

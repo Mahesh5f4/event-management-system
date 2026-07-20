@@ -95,6 +95,18 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
     }
 
+    @Operation(summary = "Update Profile", description = "Updates the authenticated user's profile information.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
+    })
+    @PutMapping("/profile")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AuthResponse> updateProfile(org.springframework.security.core.Authentication auth, @Valid @RequestBody UpdateProfileRequest req) {
+        return ResponseEntity.ok(service.updateProfile(auth.getName(), req));
+    }
+
     @Operation(summary = "Internal: Get User By Email", description = "Internal service-to-service call to fetch a user by email.")
     @GetMapping("/internal/users/by-email")
     public ResponseEntity<?> getUserByEmail(@Parameter(description = "User's email address") @RequestParam String email) {

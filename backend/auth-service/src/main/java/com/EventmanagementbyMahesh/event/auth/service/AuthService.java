@@ -197,6 +197,19 @@ public class AuthService {
         repo.save(user);
     }
 
+    public AuthResponse updateProfile(String email, UpdateProfileRequest req) {
+        User user = repo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User with email " + email + " not found"));
+
+        if (req.getName() != null && !req.getName().trim().isEmpty()) {
+            user.setName(req.getName().trim());
+            repo.save(user);
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getRole().name(), user.getEmail(), user.getName(), user.getAvatarUrl(), user.getCreatedAt());
+    }
+
     public java.util.Optional<com.EventmanagementbyMahesh.event.auth.dto.response.UserDto> getUserByEmail(String email) {
         return repo.findByEmail(email)
                 .map(u -> new com.EventmanagementbyMahesh.event.auth.dto.response.UserDto(u.getId(), u.getEmail(), u.getName(), u.getAvatarUrl()));
