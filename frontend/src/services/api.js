@@ -41,7 +41,7 @@ export const reviewService = {
 
 export const bookingService = {
   book: (bookingData) => api.post('/bookings', bookingData),
-  getMyBookings: (page = 0, size = 10) => api.get(`/bookings?page=${page}&size=${size}`),
+  getMyBookings: (page = 0, size = 10) => api.get(`/bookings/my-bookings?page=${page}&size=${size}`),
   getBookedSeats: (eventId) => api.get(`/bookings/event/${eventId}/seats`),
   getStatus: (id) => api.get(`/bookings/status/${id}`),
   downloadTicket: (id) => api.get(`/bookings/${id}/ticket`, { responseType: 'blob' }),
