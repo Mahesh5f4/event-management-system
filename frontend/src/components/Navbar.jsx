@@ -26,8 +26,8 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transform-gpu antialiased">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-2 text-white font-medium z-50">
-        <Infinity size={24} strokeWidth={1.5} className="text-white" />
+      <Link to="/" className="flex items-center gap-3 text-white font-medium z-50">
+        <img src="/logo.png" alt="EventHub Logo" className="w-8 h-8 rounded-xl object-cover shadow-[0_0_15px_rgba(138,43,226,0.6)]" />
         <span className="tracking-tight text-xl font-semibold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">EventHub</span>
       </Link>
 
