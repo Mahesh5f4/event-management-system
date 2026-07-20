@@ -35,48 +35,313 @@
 
 ---
 
-## 🏛️ Architecture
+## 🏛️ System Architecture & Microservice Communication
 
-EventHub utilizes a modular microservices architecture designed for horizontal scalability and high availability.
+EventHub utilizes a modular microservices architecture designed for horizontal scalability, fault isolation, and high availability.
 
-### Components
+### Tech Stack Overview
 *   **Frontend:** React 19 SPA (Vite, Redux Toolkit, GSAP Animations).
 *   **Backend:** Spring Boot 3.4 microservices (Java 17).
 *   **API Gateway:** Spring Cloud Gateway handling centralized routing, CORS, and rate limiting.
 *   **Database:** MySQL 8.0 for persistent, ACID-compliant transactional data.
-*   **Cache & Mutex:** Redis 7.0 for distributed locking and high-speed read caching.
-*   **Message Broker:** RabbitMQ for decoupled, asynchronous task execution.
+*   **Cache & Mutex:** Redis 7.4 for distributed locking and high-speed read caching.
+*   **Message Broker:** RabbitMQ 3.13 for decoupled, asynchronous task execution.
 *   **Machine Learning:** Python FastAPI service for recommendations.
 
-### Architecture Diagram
+---
+
+### Overall System Architecture
+
+This diagram details the flow of traffic, service routing, data components, and supporting services.
 
 ```mermaid
 graph TD
-    Client([Web/Mobile Client]) --> Gateway[API Gateway :8080]
+    Client([Web/Mobile Client]) -->|HTTP/HTTPS| Nginx[Nginx Reverse Proxy :80/:443]
+    Nginx -->|Route Request| Gateway[API Gateway :8080]
     
     subgraph "Microservices Layer"
-        Gateway --> Auth[Auth Service :8081]
-        Gateway --> Event[Event Service :8082]
-        Gateway --> Booking[Booking Service :8083]
+        Gateway -->|Route /api/auth/**| Auth[Auth Service :8081]
+        Gateway -->|Route /api/events/**| Event[Event Service :8082]
+        Gateway -->|Route /api/bookings/**| Booking[Booking Service :8083]
     end
     
     subgraph "Data Storage & Caching"
-        Auth --> MySQL[(MySQL DB)]
-        Event --> MySQL
-        Booking --> MySQL
-        Event --> Redis[(Redis Cache)]
-        Booking --> RedisLock[(Redis Mutex)]
+        Auth -->|Read/Write| MySQL[(MySQL DB :3306)]
+        Event -->|Read/Write| MySQL
+        Booking -->|Read/Write| MySQL
+        Event -->|Read/Write Cache| Redis[(Redis Cache :6379)]
+        Booking -->|Read/Write Mutex| Redis
     end
     
     subgraph "Async Processing"
-        Booking -- Publish --> RMQ[[RabbitMQ]]
+        Booking -- Publish --> RMQ[[RabbitMQ :5672]]
         RMQ -- Consume --> BookingWorker[Booking Consumer]
-        BookingWorker --> Notification[Email/PDF Service]
+        BookingWorker --> Notification[Email & PDF Service]
     end
     
     subgraph "External Services"
         Auth --> Google[Google OAuth OIDC]
         Event --> ML[Python ML Service :8001]
+    end
+```
+
+---
+
+### Microservice Communication Topology
+
+Illustrates how services communicate with one another: Synchronous REST calls (`RestTemplate`) for critical validations, Asynchronous Messaging (`RabbitMQ`) for tasks execution, and WebSockets (STOMP) for pushing real-time updates to clients.
+
+```mermaid
+graph TD
+    subgraph "Client"
+        C[Web Browser / Client]
+    end
+
+    subgraph "API Gateway"
+        GW[Gateway Service :8080]
+    end
+
+    subgraph "Microservices"
+        AS[Auth Service :8081]
+        ES[Event Service :8082]
+        BS[Booking Service :8083]
+        MLS[ML Service :8001]
+    end
+
+    subgraph "Message Broker"
+        RMQ[[RabbitMQ :5672]]
+    end
+
+    C -->|REST API Calls| GW
+    C <-->|WebSocket STOMP| GW
+    GW -->|REST /api/auth| AS
+    GW -->|REST /api/events| ES
+    GW -->|REST /api/bookings & /api/seats| BS
+    GW <-->|WS Proxy /api/ws-booking| BS
+
+    %% Inter-service Sync HTTP calls
+    BS -.->|HTTP GET /api/auth/internal/users| AS
+    BS -.->|HTTP GET /api/events/internal/| ES
+    BS -.->|HTTP PUT /api/events/internal/.../deduct-seats| ES
+    ES -.->|HTTP POST /recommendations| MLS
+
+    %% Async Communication
+    BS -->|Publish BookingMessage| RMQ
+    RMQ -->|Deliver Message| BS
+```
+
+---
+
+### API Request Lifecycle Flow
+
+This sequence trace details the path an incoming API request takes from the client, through Nginx, the API Gateway, and down to the microservices.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Nginx as Nginx Proxy (:80/:443)
+    participant GW as API Gateway (:8080)
+    participant Service as Downstream Service
+    participant DB as MySQL/Redis
+
+    Client->>Nginx: HTTP Request (Headers + JWT)
+    Note over Nginx: Rate Limiting & Gzip checks
+    Nginx->>GW: Forward Request
+    Note over GW: JwtFilter validates token signature<br/>& extracts claims
+    GW->>Service: Forward Request (with User info headers)
+    Note over Service: Spring Security checks RBAC
+    Service->>DB: Query/Update Data
+    DB-->>Service: Return Data
+    Service-->>GW: HTTP Response
+    GW-->>Nginx: HTTP Response
+    Nginx-->>Client: HTTP Response
+```
+
+---
+
+### Service Dependency Matrix
+
+This diagram showcases both compile-time Maven build dependencies and run-time service linkages.
+
+```mermaid
+graph TD
+    subgraph "Compile-Time Maven Dependencies"
+        AuthS[auth-service] -->|Maven Dependency| CL[common-library]
+        EventS[event-service] -->|Maven Dependency| CL
+        BookingS[booking-service] -->|Maven Dependency| CL
+        GatewayS[gateway-service] -->|Maven Dependency| CL
+    end
+
+    subgraph "Runtime Service Dependencies"
+        GW[gateway-service] --> AuthSR[auth-service]
+        GW --> EventSR[event-service]
+        GW --> BookingSR[booking-service]
+        
+        BookingSR -->|HTTP REST| AuthSR
+        BookingSR -->|HTTP REST| EventSR
+        EventSR -->|HTTP REST| MLSR[ml-service]
+        
+        AuthSR --> DB[(MySQL)]
+        EventSR --> DB
+        BookingSR --> DB
+        
+        EventSR --> Cache[(Redis Cache)]
+        BookingSR --> Lock[(Redis Lock)]
+        
+        BookingSR --> Queue[[RabbitMQ]]
+    end
+```
+
+---
+
+## 🧠 Internal Workings & Sequence Diagrams
+
+---
+
+### User Login & JWT Generation
+
+This sequence details the credential validation and creation of stateless, cryptographically signed JWT tokens.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client (Web App)
+    participant Nginx as Nginx
+    participant GW as API Gateway
+    participant AS as Auth Service
+    participant DB as MySQL DB
+
+    User->>Nginx: POST /api/auth/login
+    Nginx->>GW: Forward to Gateway
+    GW->>AS: Route to Auth Service
+    AS->>DB: SELECT * FROM users WHERE email = ?
+    DB-->>AS: User details (Hashed password)
+    Note over AS: Verify password using BCrypt
+    AS->>AS: Generate JWT payload (claims, role, expiration)
+    AS->>AS: Sign JWT with RSA256 Private Key
+    AS-->>GW: Return JWT token
+    GW-->>Nginx: Return JWT token
+    Nginx-->>User: HTTP 200 OK (token)
+```
+
+---
+
+### JWT Authentication & Authorization Flow
+
+Demonstrates validation of incoming authorization tokens by the Gateway without hitting the Authentication Database.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client
+    participant GW as API Gateway
+    participant Service as Event/Booking Service
+    
+    User->>GW: GET /api/bookings (Authorization: Bearer <JWT>)
+    Note over GW: JwtFilter extracts JWT<br/>Validates signature using RSA256 Public Key
+    alt Invalid/Expired Token
+        GW-->>User: HTTP 401 Unauthorized
+    else Valid Token
+        GW->>GW: Inject headers (X-User-Email, X-User-Role)
+        GW->>Service: Forward request with headers
+        Note over Service: SecurityContext populated<br/>RBAC checked (@PreAuthorize)
+        Service-->>GW: Resource data
+        GW-->>User: HTTP 200 OK
+    end
+```
+
+---
+
+### Event Retrieval & Cache Read/Write Flow
+
+Utilizes a cache-aside design with automatic expiration and eviction strategies.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client
+    participant ES as Event Service
+    participant Redis as Redis Cache
+    participant DB as MySQL DB
+
+    User->>ES: GET /api/events?page=0&size=10
+    ES->>Redis: Check cache for key 'events::page:0:size:10'
+    alt Cache Hit
+        Redis-->>ES: Return serialized event list
+        ES-->>User: Return HTTP 200 OK
+    else Cache Miss
+        Redis-->>ES: null (Cache Miss)
+        ES->>DB: Query events table (paginated)
+        DB-->>ES: Return event list
+        ES->>Redis: Write serialized list to key with TTL (10 mins)
+        ES-->>User: Return HTTP 200 OK
+    end
+```
+
+---
+
+### Distributed Seat Locking & Seat Booking Checkout
+
+Shows the interaction between distributed seat locking (Redis `SETNX`), optimistic version control in Hibernate, and the asynchronous ticket queueing workflow.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant SC as SeatLockController
+    participant BC as BookingController
+    participant RD as Redis
+    participant MQ as RabbitMQ
+    participant Consumer as BookingConsumer
+    participant BS as BookingService
+    participant ES as EventService
+    participant DB as MySQL DB
+
+    %% 1. Seat Selection
+    Client->>SC: POST /api/seats/42/lock (seatId: "A1")
+    SC->>RD: SETNX seat_lock:42:A1 userId (EX 5m)
+    alt Seat already held
+        RD-->>SC: 0 (failed)
+        SC-->>Client: HTTP 409 Conflict (Already Held)
+    else Seat free
+        RD-->>SC: 1 (success)
+        SC->>Client: HTTP 200 OK (Locked for 5m)
+        SC->>Client: Broadcast list of locked seats via WS topic
+    end
+
+    %% 2. Checkout Initiated
+    Client->>BC: POST /api/bookings {eventId: 42, seats: ["A1"]}
+    Note over BC: Check Rate Limits in Redis (max 500 req/min)
+    BC->>RD: SET booking_status:<corrId> PENDING
+    BC->>MQ: Publish BookingMessage
+    BC-->>Client: HTTP 202 Accepted {bookingId: corrId}
+
+    %% 3. Async Processing
+    MQ->>Consumer: Deliver BookingMessage
+    Consumer->>BS: Call bookTickets(email, req)
+    
+    %% Concurrency control on event write
+    loop Attempt event lock
+        BS->>RD: SETNX lock:event:42 uniqueValue (EX 10s)
+        alt Lock acquired
+            RD-->>BS: 1 (Success)
+            BS->>BS: attemptBooking()
+            BS->>ES: GET /api/events/internal/42 (Retrieve capacity)
+            ES-->>BS: Event data
+            Note over BS: Verify availableSeats >= ticketCount
+            BS->>ES: PUT /api/events/internal/42/deduct-seats
+            Note over ES: Decrement availableSeats & check version
+            ES->>DB: UPDATE events SET available_seats = ?, version = version+1
+            ES-->>BS: Success
+            BS->>DB: INSERT INTO bookings (status = CONFIRMED)
+            BS->>RD: DEL seat_lock:42:A1 (Release seat lock)
+            BS->>RD: DEL lock:event:42 (Release event lock)
+            BS->>RD: Set status = COMPLETED, message = "Success"
+        else Lock busy
+            RD-->>BS: 0 (Failed)
+            Note over BS: Backoff and retry (up to 15 times)
+        end
     end
 ```
 
@@ -91,9 +356,9 @@ graph TD
 | **Backend Services** | Spring Boot 3.4, Java 17 | Core business logic, REST APIs, and microservices orchestration. |
 | **Data Access** | Spring Data JPA, Hibernate | ORM mapping and database interactions. |
 | **Database** | MySQL 8.0 | ACID-compliant persistent storage for inventory and users. |
-| **Cache/Locking** | Redis 7.0 | Distributed mutex locks for seats and L2 caching for events. |
-| **Messaging** | RabbitMQ | Async communication decoupling booking from notification logic. |
-| **Machine Learning** | Python, FastAPI | High-performance recommendation engine. |
+| **Cache/Locking** | Redis 7.4 | Distributed mutex locks for seats and L2 caching for events. |
+| **Messaging** | RabbitMQ 3.13 | Async communication decoupling booking from notification logic. |
+| **Machine Learning** | Python 3.12, FastAPI | High-performance recommendation engine. |
 | **Monitoring** | Prometheus, Grafana | System observability and real-time metrics tracking. |
 | **CI/CD** | GitHub Actions, JaCoCo | Automated testing, coverage reporting, and continuous integration. |
 
@@ -255,46 +520,6 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-### ⚡ Async Booking Pipeline — Sequence Diagram
-
-This diagram shows how the system decouples the booking HTTP request from heavy downstream work using RabbitMQ, achieving sub-100ms API response times while still guaranteeing PDF generation and email delivery.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client
-    participant GW as API Gateway
-    participant BS as Booking Service
-    participant RD as Redis
-    participant DB as MySQL
-    participant RMQ as RabbitMQ
-    participant BW as Booking Worker
-    participant ML as Mail + PDF
-
-    Client->>GW: POST /api/bookings (JWT)
-    GW->>BS: forward request
-
-    BS->>RD: SETNX seat:eventId:seatId (5 min TTL)
-    alt Seat already locked
-        RD-->>BS: 0 (lock failed)
-        BS-->>Client: 409 Conflict
-    else Seat available
-        RD-->>BS: 1 (lock acquired)
-        BS->>DB: INSERT booking (status=PENDING)
-        Note over DB: @Version check prevents<br/>optimistic lock race condition
-        BS->>RMQ: publish BookingConfirmedEvent
-        BS-->>Client: 202 Accepted {bookingId, status: PENDING}
-
-        RMQ-->>BW: consume BookingConfirmedEvent
-        BW->>DB: UPDATE booking (status=CONFIRMED)
-        BW->>ML: generate PDF ticket (iTextPDF)
-        BW->>ML: send confirmation email (Brevo SMTP)
-        BW->>RD: DEL seat lock
-    end
-```
-
-> **Why this matters:** Steps 1–6 complete in **< 100ms**. Steps 8–12 run asynchronously off the HTTP thread — the client never waits for PDF generation or email delivery.
-
 ---
 
 ## 🔒 Security
@@ -317,48 +542,293 @@ sequenceDiagram
 
 ---
 
-## 🚀 Deployment
+## 🌐 Live Deployment
 
-EventHub ships with a **production-ready Docker Compose** setup targeting a single Ubuntu EC2 instance. All services run in containers inside a private `eventhub-net` bridge network — only **Nginx** is internet-facing on ports 80 and 443.
+*   **Backend Base API IP**: `http://13.48.56.253`
+*   **Frontend Deployment**: Deployed on Netlify, connected via Git integration for CD, with all requests to `/api/*` proxied directly to the backend IP `http://13.48.56.253/api/*`.
+*   **Health Check Status Endpoint**: `http://13.48.56.253/actuator/health` (Internal: forwards to the Gateway health verification routing).
+*   **Unified Swagger OpenAPI Endpoint**: `http://13.48.56.253/swagger-ui.html`
+*   **GitHub Repository**: [Mahesh5f4/event-management-system](https://github.com/Mahesh5f4/event-management-system)
+*   **Docker Images**: Built locally on host during deployments (no public registry publication currently).
 
-### Deployment Architecture
+---
 
-```
-              Internet
-                  │
-            ┌─────▼─────┐
-            │   Nginx   │  ← ONLY public service (port 80/443)
-            │ :80 / :443│    Gzip · Rate limiting · Security headers
-            └─────┬─────┘
-                  │  (internal Docker network)
-          ┌───────▼────────┐
-          │  API Gateway   │  Spring Cloud Gateway (port 8080, internal)
-          └──┬──────┬──┬───┘
-             │      │  │
-         Auth  Event  Booking     ← Spring Boot services (internal)
-          │      │       │
-        MySQL  Redis  RabbitMQ    ← Infrastructure (internal, persisted)
-                 │
-              ML Service          ← FastAPI recommender (internal)
+## 🏗️ Infrastructure Overview
 
-        Prometheus + Grafana      ← Monitoring (internal, SSH tunnel access)
-```
+EventHub is structured to run inside a high-security container network. The layout of the hosting architecture consists of:
 
-**What's secured:**
-- MySQL, Redis, RabbitMQ — zero host port bindings
-- Spring Boot services — zero host port bindings  
-- Prometheus/Grafana — internal only (SSH tunnel for access)
-- EC2 Security Group — inbound 22 (your IP only), 80, 443
+*   **AWS Infrastructure**: Hosted on a single **AWS EC2** virtual machine (`t3.small` - 2 vCPU, 2GB RAM, 30 GB gp3 EBS Volume).
+*   **Operating System**: Ubuntu Server 22.04 LTS.
+*   **Elastic IP Address**: Associated with the instance to provide a static public IPv4 gateway.
+*   **Containerization**: **Docker Engine** and **Docker Compose v2** manage the deployment environment.
+*   **Private Bridge Networking**: All microservices run inside a closed virtual network (`eventhub-net`).
+*   **Nginx Proxy Gateway**: The only container exposing ports to the outside world (`80` and `443`). It routes requests to the API Gateway (`gateway-service`), performs Gzip compression, forces rate limits, sets HTTP safety headers, and manages SSL certificates.
+*   **Redis (L2 Caching & Concurrency)**: Runs inside the private network. Persistent storage is mounted using Docker volumes (`redis_data`) with `appendonly` AOF tracking.
+*   **RabbitMQ Broker**: Decouples heavy processes. Persistent message queues are stored on Docker volume (`rabbitmq_data`).
+*   **MySQL Database**: Holds user, ticket, and booking records. Persisted using volume mount (`mysql_data`).
 
-**See the full deployment guide:** [`docs/AWS_DEPLOYMENT_GUIDE.md`](./docs/AWS_DEPLOYMENT_GUIDE.md)
+---
 
-### CI/CD Pipeline
+## 🚀 Deployment Guide (Production AWS & Docker Compose)
+
+This guide documents the complete procedure to provision resources, build containers, configure security settings, and test operations on AWS.
+
+### CI/CD Pipeline Build System
+
 A robust GitHub Actions pipeline (`backend-ci.yml`) triggers on pushes to `main`/`develop`:
-1. Checks out code and provisions Java 17 Temurin.
-2. Validates and compiles the Maven multi-module structure.
-3. Executes unit and integration tests.
-4. Generates aggregated JaCoCo code coverage reports.
-5. Uploads artifacts (Surefire reports, JaCoCo HTML) for review.
+
+```mermaid
+graph TD
+    Dev[Developer git push] --> GHA[GitHub Actions Runner]
+    GHA --> Setup[Setup Java 17 Temurin]
+    Setup --> Cache[Cache Maven Dependencies]
+    Cache --> Compile[Compile & Validate Multi-Module mvnw]
+    Compile --> Tests[Execute Unit & Integration Tests]
+    Tests --> Coverage[Verify Coverage via JaCoCo]
+    Coverage --> Report[Report Aggregate % + Upload HTML Artifacts]
+```
+
+---
+
+### Deployment Architecture Map
+
+```mermaid
+graph TD
+    Dev[Developer] -->|1. git push| GitRepo[GitHub Repository]
+    GitRepo -->|2. Trigger Workflow| GHA[GitHub Actions]
+    GHA -->|3. Build & Package| DB[Docker Build]
+    DB -->|4. Generate| DI[Docker Images]
+    DI -->|5. Deploy / Pull| EC2[AWS EC2 Instance]
+    
+    subgraph "EC2 Runtime Environment (Docker Compose)"
+        Nginx[Nginx Reverse Proxy :80/:443] -->|Route to Internal Net| GW[API Gateway :8080]
+        
+        subgraph "Microservices Layer"
+            GW --> AS[Authentication Service :8081]
+            GW --> ES[Event Service :8082]
+            GW --> BS[Booking Service :8083]
+            ES --> MS[Recommendation ML Service :8001]
+        end
+        
+        subgraph "Infrastructure & Storage"
+            AS --> MySQL[(MySQL :3306)]
+            ES --> MySQL
+            BS --> MySQL
+            
+            ES --> Redis[(Redis :6379)]
+            BS --> Redis
+            
+            BS --> RMQ[[RabbitMQ :5672]]
+        end
+    end
+```
+
+---
+
+### Step 1 — AWS Security Groups Configuration
+Create a security group `eventhub-sg` with the following inbound rule configurations:
+
+| Rule Type | Port Range | Source | Purpose |
+|---|---|---|---|
+| SSH | 22 | Your Local IP only (`x.x.x.x/32`) | Secure server terminal access |
+| HTTP | 80 | Anywhere (`0.0.0.0/0`, `::/0`) | Standard web traffic access |
+| HTTPS | 443 | Anywhere (`0.0.0.0/0`, `::/0`) | Secure encrypted web traffic access |
+
+> [!WARNING]
+> Keep database ports `3306`, `6379`, `5672`, and service ports `8080-8083` closed to external traffic. They are secured inside the Docker virtual bridge network.
+
+---
+
+### Step 2 — Provision Elastic IP
+To ensure the host retains the same IP across updates and resets:
+1. Log into the AWS EC2 Console, and head to **Network & Security** → **Elastic IPs**.
+2. Click **Allocate Elastic IP address**.
+3. Select the allocated address, click **Actions** → **Associate Elastic IP address**.
+4. Select the target EC2 instance and click **Associate**.
+
+---
+
+### Step 3 — Install Docker Engine on EC2
+Establish an SSH connection to your instance and run the setup scripts:
+
+```bash
+# Connect to your instance
+ssh -i target-key.pem ubuntu@<YOUR-ELASTIC-IP>
+
+# Update package mappings
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker's official GPG key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Add repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install packages
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Assign permissions to default user (avoids running commands with sudo)
+sudo usermod -aG docker ubuntu
+newgrp docker
+```
+
+---
+
+### Step 4 — Clone Repository and Configure Env Variables
+Clone the repo and configure your secrets using the `.env.example` structure:
+
+```bash
+# Clone
+git clone https://github.com/Mahesh5f4/event-management-system.git
+cd event-management-system/backend
+
+# Create production env file
+cp .env.production .env
+nano .env
+```
+
+Review and set secure keys in the environment file:
+```bash
+# Database credentials
+MYSQL_ROOT_PASSWORD=SetSecureDbPassword
+SPRING_DATASOURCE_PASSWORD=SetSecureDbPassword
+
+# Messaging broker credentials
+RABBITMQ_PASSWORD=SetSecureBrokerPassword
+SPRING_RABBITMQ_PASSWORD=SetSecureBrokerPassword
+
+# Monitoring administration
+GF_ADMIN_PASSWORD=SetGrafanaDashboardPassword
+
+# Routing and domain bindings
+ALLOWED_ORIGINS=https://your-frontend-domain.com
+```
+
+---
+
+### Step 5 — Prepare Target Folders & Build Images
+Before running the containers, initialize the local directory paths and build the images:
+
+```bash
+# Create local directories for certs and backups
+mkdir -p certbot/conf certbot/www backups
+
+# Assign execution permissions to all script files
+chmod +x scripts/backup.sh scripts/restore.sh scripts/auto-backup.sh init-letsencrypt.sh
+
+# Build all docker containers from source configurations
+docker compose build
+```
+
+---
+
+### Step 6 — Run the Stack & Verify Boot Status
+Deploy the services in detached mode and trace the logs:
+
+```bash
+# Start
+docker compose up -d
+
+# Verify all 10 containers are running and healthy
+docker compose ps
+```
+
+Expected healthy boot order takes ~2 minutes. Verify status values:
+```text
+eventhub-mysql             -> healthy
+eventhub-redis             -> healthy
+eventhub-rabbitmq          -> healthy
+eventhub-ml-service        -> healthy
+eventhub-auth-service      -> healthy
+eventhub-event-service     -> healthy
+eventhub-booking-service   -> healthy
+eventhub-gateway-service   -> healthy
+eventhub-nginx             -> healthy
+```
+
+---
+
+### Step 7 — SSL Setup (Let's Encrypt)
+To enable HTTPS, execute the automated verification script:
+
+```bash
+# Run HTTPS initialization script
+./init-letsencrypt.sh yourdomain.com your-email@example.com
+```
+
+To manage the certificate lifecycle, configure automated renew tasks inside the server's crontab:
+```bash
+# Open crontab config
+crontab -e
+
+# Append renewal task (fires on the 1st of every month)
+0 0 1 * * cd /home/ubuntu/event-management-system/backend && docker run --rm -v $(pwd)/certbot/conf:/etc/letsencrypt -v $(pwd)/certbot/www:/var/www/certbot certbot/certbot:latest renew --quiet && docker compose restart nginx
+```
+
+---
+
+### Step 8 — Configure Database Backup Policy
+Deploy automated database dumps to protect transaction records:
+
+```bash
+# Install cron job mapping (automates DB dumps every night at 2:00 AM)
+make setup-backup-cron
+
+# Verify the job mapping is active
+crontab -l
+```
+
+Manual actions (useful when upgrading containers or running server migrations):
+```bash
+# Run manual database dump
+make backup
+
+# Restore database from dump file
+make restore FILE=./backups/eventhub_backup_20260720_120000.sql
+```
+
+---
+
+### Step 9 — Deployment Verification Checklist
+Execute these commands post-deployment to ensure all systems are operating correctly:
+
+#### Check Infrastructure Services
+```bash
+# Test MySQL connection
+docker exec eventhub-mysql mysqladmin ping -u root --password="$MYSQL_ROOT_PASSWORD"
+
+# Test Redis connection
+docker exec eventhub-redis redis-cli ping
+
+# Test RabbitMQ connection
+docker exec eventhub-rabbitmq rabbitmq-diagnostics check_port_connectivity
+```
+
+#### Test API routing and internal services
+```bash
+# Fetch health check status of Auth microservice through Nginx Gateway
+curl -s http://localhost/api/auth/actuator/health
+
+# Verify ML Recommendation service health check response
+docker exec eventhub-ml-service python -c \
+  "import urllib.request; print(urllib.request.urlopen('http://localhost:8001/health').read())"
+```
+
+---
+
+### Step 10 — Redeployment & Maintenance
+When pushing updates to production, execute a rolling update without dropping active client connections:
+
+```bash
+# Pull new changes, build image updates, and hot-restart containers
+make update
+```
 
 ---
 
