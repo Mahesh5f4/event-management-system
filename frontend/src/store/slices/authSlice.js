@@ -278,6 +278,5 @@ const authSlice = createSlice({
   },
 });
 
-export { updateProfile, sendChangePasswordOtp, changePassword };
 export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;
