@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchEventById } from '../store/slices/eventsSlice';
@@ -52,10 +52,15 @@ const Payment = () => {
   const seats = queryParams.get('seats') || 'Any';
   const seatList = seats !== 'Any' ? seats.split(',') : [];
 
+  // Fetch event data if missing or cleared by previous page's cleanup
   useEffect(() => {
     if (!event || event.id !== parseInt(eventId)) {
       dispatch(fetchEventById(eventId));
     }
+  }, [eventId, event?.id, dispatch]);
+
+  // Handle page lifecycle and seat locks
+  useEffect(() => {
     // Pre-load Razorpay script in background
     loadRazorpayScript();
 
