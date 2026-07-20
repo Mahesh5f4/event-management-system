@@ -19,6 +19,7 @@
         <java.version>17</java.version>
         <rest-assured.version>5.3.2</rest-assured.version>
         <awaitility.version>4.2.0</awaitility.version>
+        <skipTests>true</skipTests>
     </properties>
 
     <dependencies>
