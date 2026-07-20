@@ -54,7 +54,7 @@ class PaymentControllerTest {
 
         when(paymentService.createOrder(eq("test@example.com"), any())).thenReturn(res);
 
-        mockMvc.perform(post("/payments/create-order")
+        mockMvc.perform(post("/bookings/payments/create-order")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
                 .principal(new UsernamePasswordAuthenticationToken("test@example.com", null)))
@@ -76,7 +76,7 @@ class PaymentControllerTest {
 
         when(paymentService.verifyPayment(eq("test@example.com"), any())).thenReturn(res);
 
-        mockMvc.perform(post("/payments/verify")
+        mockMvc.perform(post("/bookings/payments/verify")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req))
                 .principal(new UsernamePasswordAuthenticationToken("test@example.com", null)))

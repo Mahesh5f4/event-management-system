@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
  * /webhook is verified by Razorpay-Signature header instead.
  */
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/bookings/payments")
 @Tag(name = "Payment APIs", description = "Razorpay Test Mode integration for ticket purchases")
 public class PaymentController {
 
