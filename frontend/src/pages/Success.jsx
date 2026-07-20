@@ -60,7 +60,7 @@ const Success = () => {
       <AnimatePresence mode="wait">
         {(status === 'processing' || status === 'idle') && (
           <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-md">
-            <Card className="p-12 text-center space-y-8">
+            <Card className="p-8 sm:p-12 text-center space-y-8">
               <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
               <h1 className="text-3xl font-medium text-white tracking-tight">Validating Experience</h1>
               <p className="text-white/40 text-sm leading-relaxed">Securing your spot in the global inventory...</p>
@@ -73,7 +73,7 @@ const Success = () => {
 
         {status === 'failed' && (
           <motion.div key="failed" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
-            <Card className="p-12 text-center space-y-8">
+            <Card className="p-8 sm:p-12 text-center space-y-8">
               <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto border border-red-500/20">
                 <XCircle size={32} />
               </div>
@@ -91,7 +91,7 @@ const Success = () => {
 
         {status === 'completed' && (
           <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-xl">
-            <Card className="p-12 text-center relative overflow-hidden">
+            <Card className="p-8 sm:p-12 text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
                  <Sparkles size={120} className="text-white" />
               </div>

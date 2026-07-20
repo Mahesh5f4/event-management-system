@@ -18,15 +18,15 @@ const Button = ({
   };
 
   const sizes = {
-    sm: 'px-4 py-2 text-sm rounded-full',
-    md: 'px-6 py-3 text-base rounded-full',
-    lg: 'px-8 py-4 text-lg rounded-full',
-    icon: 'p-2.5 rounded-full',
+    sm: 'px-4 py-2 text-sm rounded-full min-h-[44px]',
+    md: 'px-6 py-3 text-base rounded-full min-h-[44px]',
+    lg: 'px-8 py-4 text-lg rounded-full min-h-[48px]',
+    icon: 'p-2.5 rounded-full min-h-[44px] min-w-[44px]',
   };
 
   return (
     <button
-      className={`flex items-center justify-center gap-2 font-medium transition-all duration-300 transform-gpu ${variants[variant]} ${sizes[size]} ${className} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`flex items-center justify-center gap-2 font-medium transition-all duration-300 transform-gpu active:scale-[0.98] ${variants[variant]} ${sizes[size]} ${className} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
       disabled={disabled || loading}
       {...props}
     >

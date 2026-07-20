@@ -196,7 +196,7 @@ const Payment = () => {
   return (
     <div className="container mx-auto px-6 py-20 max-w-xl">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="p-10 md:p-12 relative overflow-hidden">
+        <Card className="p-6 sm:p-10 md:p-12 relative overflow-hidden">
 
           {/* Header */}
           <div className="text-center mb-12">
@@ -214,7 +214,7 @@ const Payment = () => {
               <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="space-y-8 mb-12">
                   {/* Order Summary */}
-                  <div className="p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-6">
+                  <div className="p-6 sm:p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-6">
                     <h3 className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Order Summary</h3>
 
                     <div className="space-y-4">

@@ -16,8 +16,8 @@ const Seat = memo(({ seatId, isBooked, isLocked, isSelected, onSelect, label }) 
   <button
     disabled={isBooked || isLocked}
     className={`
-      w-8 h-8 rounded-xl text-[10px] font-bold transition-all border transform-gpu
-      ${isSelected ? 'bg-white text-black border-white shadow-xl shadow-white/10' : ''}
+      w-10 h-10 md:w-8 md:h-8 rounded-xl text-[10px] font-bold transition-all border transform-gpu flex items-center justify-center flex-shrink-0
+      ${isSelected ? 'bg-white text-black border-white shadow-xl shadow-white/10 scale-110' : ''}
       ${isBooked ? 'bg-red-500/20 text-red-500/40 border-red-500/20 cursor-not-allowed opacity-60' : ''}
       ${isLocked ? 'bg-red-500/10 text-red-500/20 border-red-500/10 cursor-not-allowed animate-pulse' : ''}
       ${!isSelected && !isBooked && !isLocked ? 'bg-emerald-500/10 text-emerald-500/50 border-emerald-500/10 hover:bg-emerald-500/20 hover:text-emerald-400 hover:border-emerald-500/30' : ''}
@@ -549,16 +549,18 @@ const EventDetails = () => {
                       <div className="text-center mt-6 text-[10px] font-bold text-white/20 uppercase tracking-[1em]">Stage Area</div>
                     </div>
 
-                    <div className="flex flex-col gap-5 items-center mb-16 transform-gpu">
-                      {seatGridConfig && (
-                        <SeatMap
-                          {...seatGridConfig}
-                          bookedSeats={bookedSeats}
-                          lockedByOthers={lockedByOthers}
-                          selectedSeats={selectedSeats}
-                          onSelectSeat={handleSelectSeat}
-                        />
-                      )}
+                    <div className="w-full overflow-x-auto pb-8 hide-scrollbar cursor-grab active:cursor-grabbing">
+                      <div className="flex flex-col gap-5 items-center min-w-max mx-auto transform-gpu px-4">
+                        {seatGridConfig && (
+                          <SeatMap
+                            {...seatGridConfig}
+                            bookedSeats={bookedSeats}
+                            lockedByOthers={lockedByOthers}
+                            selectedSeats={selectedSeats}
+                            onSelectSeat={handleSelectSeat}
+                          />
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-8 pt-12 border-t border-white/5">

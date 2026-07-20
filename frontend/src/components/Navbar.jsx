@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { Infinity, Menu, X, LogOut, User } from 'lucide-react';
 import { useState, useCallback, useMemo, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
   const { user } = useAppSelector(state => state.auth);
@@ -95,35 +96,60 @@ const Navbar = () => {
       </button>
 
       {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="absolute top-20 left-6 right-6 z-40 md:hidden liquid-glass rounded-2xl p-4 flex flex-col gap-2 transform-gpu">
-          {navLinks.map((link) => {
-            if (link.private && !user) return null;
-            if (link.admin && user?.role !== 'ADMIN') return null;
-            const isActive = location.pathname === link.to;
-            return (
-              <Link 
-                key={link.label}
-                to={link.to}
-                onClick={() => setMenuOpen(false)}
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-          {!user && (
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/5">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="text-center py-3 rounded-xl liquid-glass text-white text-sm font-medium">
-                Log in
-              </Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="text-center py-3 rounded-xl bg-white text-black text-sm font-medium">
-                Sign Up
-              </Link>
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-20 left-6 right-6 z-40 md:hidden liquid-glass rounded-2xl p-4 flex flex-col gap-2 transform-gpu"
+          >
+            {navLinks.map((link) => {
+              if (link.private && !user) return null;
+              if (link.admin && user?.role !== 'ADMIN') return null;
+              const isActive = location.pathname === link.to;
+              return (
+                <Link 
+                  key={link.label}
+                  to={link.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={`px-4 py-3 rounded-xl text-sm transition-all min-h-[44px] flex items-center ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            
+            <div className="mt-2 pt-4 border-t border-white/5">
+              {!user ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center justify-center min-h-[44px] rounded-xl liquid-glass text-white text-sm font-medium hover:bg-white/5">
+                    Log in
+                  </Link>
+                  <Link to="/register" onClick={() => setMenuOpen(false)} className="flex items-center justify-center min-h-[44px] rounded-xl bg-white text-black text-sm font-medium hover:bg-white/90">
+                    Sign Up
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl min-h-[44px] text-white/60 hover:text-white hover:bg-white/5 transition-all">
+                    <User size={18} />
+                    <span>My Profile</span>
+                  </Link>
+                  <button 
+                    onClick={() => { setMenuOpen(false); handleLogout(); }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl min-h-[44px] text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left w-full"
+                  >
+                    <LogOut size={18} />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

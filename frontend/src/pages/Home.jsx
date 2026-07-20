@@ -90,7 +90,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-white text-5xl sm:text-6xl lg:text-7xl font-medium leading-[1.1] tracking-tight mb-6"
+            className="text-white text-4xl sm:text-6xl lg:text-7xl font-medium leading-[1.1] tracking-tight mb-6"
           >
             Live Better, Feel Whole <br /> Every Day
           </motion.h1>
