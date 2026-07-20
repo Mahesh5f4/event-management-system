@@ -8,43 +8,47 @@ import Badge from '../components/ui/Badge';
 
 const EventCard = memo(({ event }) => (
   <Link to={`/event/${event.id}`} className="group transform-gpu">
-    <div className="liquid-glass flex flex-col h-full bg-white/5 hover:bg-white/10 transition-all duration-300 rounded-[1.5rem] overflow-hidden">
-      <div className="relative aspect-[16/10] overflow-hidden">
-        <img 
-          src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800'} 
-          alt={event.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform"
-        />
-        <div className="absolute top-4 right-4">
-          <Badge variant="primary" className="bg-white text-black border-none px-4 py-1.5 shadow-xl">
-            ₹{event.price}
-          </Badge>
-        </div>
+    <div className="relative aspect-square bg-white/5 hover:bg-white/10 transition-all duration-300 rounded-[1.5rem] overflow-hidden border border-white/10 shadow-2xl">
+      {/* Background Image */}
+      <img 
+        src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800'} 
+        alt={event.title}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform z-0"
+      />
+      {/* Gradient Overlay for readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent z-10" />
+
+      {/* Price Badge */}
+      <div className="absolute top-4 right-4 z-20">
+        <Badge variant="primary" className="bg-black/50 backdrop-blur-md text-white border border-white/10 px-3 py-1 text-xs shadow-xl">
+          ₹{event.price}
+        </Badge>
       </div>
       
-      <div className="p-6 flex flex-col flex-1">
-        <h3 className="text-xl font-medium text-white mb-4 group-hover:text-white transition-colors line-clamp-2 leading-snug">
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col z-20 h-full justify-end">
+        <h3 className="text-lg font-medium text-white mb-3 group-hover:text-white transition-colors line-clamp-2 leading-tight">
           {event.title}
         </h3>
         
-        <div className="space-y-4 mt-auto">
-          <div className="flex items-center gap-3 text-white/50 text-sm">
-            <Calendar size={16} />
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-white/80 text-xs">
+            <Calendar size={14} />
             <span>{new Date(event.startTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
-          <div className="flex items-center gap-3 text-white/50 text-sm">
-            <MapPin size={16} />
+          <div className="flex items-center gap-2 text-white/80 text-xs">
+            <MapPin size={14} />
             <span className="line-clamp-1">{event.location}</span>
           </div>
         </div>
 
-        <div className="pt-6 mt-6 border-t border-white/5 flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">
+        <div className="pt-3 border-t border-white/20 flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
             {event.availableSeats} Seats Left
           </span>
-          <div className="flex items-center gap-2 text-white font-medium text-sm">
-            Details <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center gap-1 text-white font-medium text-xs">
+            Details <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>
@@ -139,7 +143,7 @@ const Home = () => {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="liquid-glass aspect-[4/5] rounded-3xl animate-pulse bg-white/5" />
+              <div key={i} className="liquid-glass aspect-square rounded-[1.5rem] animate-pulse bg-white/5" />
             ))}
           </div>
         ) : (
