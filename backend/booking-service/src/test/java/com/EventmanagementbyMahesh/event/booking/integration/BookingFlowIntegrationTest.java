@@ -68,6 +68,9 @@ public class BookingFlowIntegrationTest {
     private BookingRepository bookingRepo;
 
     @MockBean
+    private com.EventmanagementbyMahesh.event.booking.repository.PaymentRepository paymentRepo;
+
+    @MockBean
     private StringRedisTemplate redisTemplate;
 
     @MockBean
