@@ -82,7 +82,7 @@ const bookingsSlice = createSlice({
            state.myBookings = action.payload.content;
            state.totalPages = action.payload.totalPages;
            state.totalElements = action.payload.totalElements;
-           state.currentPage = action.payload.number;
+           state.currentPage = action.payload.pageNo;
         } else {
            state.myBookings = action.payload || [];
            state.totalPages = 1;

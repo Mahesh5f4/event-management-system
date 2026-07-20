@@ -82,7 +82,7 @@ const eventsSlice = createSlice({
         state.loading = false;
         state.items = action.payload.content;
         state.pagination = {
-          currentPage: action.payload.number,
+          currentPage: action.payload.pageNo,
           totalPages: action.payload.totalPages,
           totalElements: action.payload.totalElements,
         };
