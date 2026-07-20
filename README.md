@@ -315,16 +315,21 @@ sequenceDiagram
         SC->>Client: Broadcast list of locked seats via WS topic
     end
 
-    %% 2. Checkout Initiated
-    Client->>BC: POST /api/bookings {eventId: 42, seats: ["A1"]}
+    %% 2. Razorpay Order Creation
+    Client->>BC: POST /api/bookings/payments/create-order {eventId: 42, seats: ["A1"]}
     Note over BC: Check Rate Limits in Redis (max 500 req/min)
-    BC->>RD: SET booking_status:<corrId> PENDING
-    BC->>MQ: Publish BookingMessage
-    BC-->>Client: HTTP 202 Accepted {bookingId: corrId}
+    BC->>Razorpay: Create Order API Call
+    Razorpay-->>BC: razorpay_order_id
+    BC-->>Client: HTTP 200 OK {razorpayOrderId}
 
-    %% 3. Async Processing
+    %% 3. Payment & Verification
+    Client->>Razorpay: Complete Payment Modal
+    Razorpay-->>Client: razorpay_payment_id & signature
+    Client->>BC: POST /api/bookings/payments/verify {signature}
+    Note over BC: Verify Razorpay HMAC Signature
+    BC->>MQ: Publish BookingMessage (if valid)
     MQ->>Consumer: Deliver BookingMessage
-    Consumer->>BS: Call bookTickets(email, req)
+    Consumer->>BS: Call processBooking(req)
     
     %% Concurrency control on event write
     loop Attempt event lock
@@ -497,15 +502,15 @@ EventHub features centralized Swagger UI documentation accessible at the API Gat
 | `GET` | `/api/events` | Paginated event catalog (cached) | No |
 | `GET` | `/api/events/{id}/recommendations` | Get ML recommendations | No |
 | `POST` | `/api/seats/{eventId}/lock` | Atomically lock a seat in Redis | **Yes** (User) |
-| `POST` | `/api/bookings` | Queue an async ticket booking | **Yes** (User) |
-| `GET` | `/api/bookings/status/{id}` | Poll async booking status | **Yes** (User) |
+| `POST` | `/api/bookings/payments/create-order` | Create Razorpay order | **Yes** (User) |
+| `POST` | `/api/bookings/payments/verify` | Verify payment and confirm booking | **Yes** (User) |
 | `GET` | `/api/bookings/{id}/ticket` | Download generated PDF ticket | **Yes** (User) |
 | `POST` | `/api/events` | Create a new event | **Yes** (Admin) |
 | `GET` | `/api/admin/analytics/traffic` | Traffic & revenue dashboard | **Yes** (Admin) |
 
-#### Sample Request: Asynchronous Booking
+#### Sample Request: Razorpay Order Creation
 ```json
-POST /api/bookings
+POST /api/bookings/payments/create-order
 Authorization: Bearer <JWT_TOKEN>
 
 {
@@ -514,14 +519,15 @@ Authorization: Bearer <JWT_TOKEN>
   "seats": ["A1", "A2"]
 }
 ```
-*Response (202 Accepted):*
+*Response (200 OK):*
 ```json
 {
   "success": true,
-  "message": "Booking request accepted and queued",
+  "message": "Payment order created",
   "data": {
-    "bookingId": "c8f2b1a1-9d3c-...",
-    "status": "PENDING"
+    "razorpayOrderId": "order_H2aX...",
+    "amount": 200000,
+    "currency": "INR"
   }
 }
 ```
