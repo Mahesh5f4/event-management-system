@@ -314,7 +314,7 @@ services:
       EVENT_SERVICE_URL: ${EVENT_SERVICE_URL:-http://event-service:8082}
       BOOKING_SERVICE_URL: ${BOOKING_SERVICE_URL:-http://booking-service:8083}
       # CORS — set to your frontend domain in production
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,https://eventshublimited.netlify.app,http://13.48.56.253}
       PORT: 8080
       SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 30s
     depends_on:
