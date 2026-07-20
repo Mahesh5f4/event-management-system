@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageImpl;
+import com.EventmanagementbyMahesh.event.common.dto.PageResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -80,7 +80,8 @@ class EventControllerTest {
 
     @Test
     void getAll_ReturnsPage() throws Exception {
-        when(eventService.getAll(0, 10)).thenReturn(new PageImpl<>(List.of(mockResponse)));
+        PageResponse<EventResponse> pageResponse = new PageResponse<>(List.of(mockResponse), 0, 10, 1, 1, true);
+        when(eventService.getAll(0, 10)).thenReturn(pageResponse);
 
         mockMvc.perform(get("/events?page=0&size=10"))
                 .andExpect(status().isOk())

@@ -6,12 +6,16 @@ import com.EventmanagementbyMahesh.event.booking.entity.BookingStatus;
 import com.EventmanagementbyMahesh.event.booking.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.EventmanagementbyMahesh.event.common.metrics.BookingMetrics;
 import com.EventmanagementbyMahesh.event.common.service.EmailService;
+import com.EventmanagementbyMahesh.event.common.dto.PageResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.client.RestTemplate;
 
@@ -37,25 +41,27 @@ public class BookingService {
     private final StringRedisTemplate redisTemplate;
     private final EmailService emailService;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public BookingService(BookingRepository bookingRepo,
                           SeatLockService seatLockService,
                           BookingMetrics bookingMetrics,
                           StringRedisTemplate redisTemplate,
                           EmailService emailService,
-                          RestTemplate restTemplate) {
+                          RestTemplate restTemplate,
+                          ObjectMapper objectMapper) {
         this.bookingRepo = bookingRepo;
         this.seatLockService = seatLockService;
         this.bookingMetrics = bookingMetrics;
         this.redisTemplate = redisTemplate;
         this.emailService = emailService;
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
 
     /**
      * Book tickets with optimistic locking + retry logic.
      */
-    @CacheEvict(value = {"events", "event"}, allEntries = true)
     public BookingResponse bookTickets(String userEmail, BookingRequest req) {
         // Fetch UserDto via REST
         String userUrl = authServiceUrl + "/api/auth/internal/users/by-email?email=" + userEmail;
@@ -156,8 +162,9 @@ public class BookingService {
             seatLockService.unlockMultipleSeats(event.getId(), req.seats);
         }
 
-        // Evict cache to ensure fresh data on next fetch
+        // Evict caches
         evictUserBookingsCache(user.getEmail());
+        evictEventsCache();
 
         return toResponse(saved, event);
     }
@@ -222,12 +229,9 @@ public class BookingService {
                     List.of(booking.getSeats().split(",")));
         }
         evictUserBookingsCache(booking.getUserEmail());
+        evictEventsCache();
     }
 
-    /**
-     * Cancels a PENDING booking when payment fails or times out.
-     * Restores deducted seats in event-service.
-     */
     @Transactional
     public void cancelBooking(Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
@@ -248,16 +252,52 @@ public class BookingService {
                     List.of(booking.getSeats().split(",")));
         }
         evictUserBookingsCache(booking.getUserEmail());
+        evictEventsCache();
     }
 
-    @CacheEvict(value = "userBookingsV2", key = "#userEmail")
     public void evictUserBookingsCache(String userEmail) {
-        // Just for cache eviction
+        try {
+            java.util.Set<String> keys = redisTemplate.keys("userBookingsV2:" + userEmail + "*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    public void evictEventsCache() {
+        try {
+            java.util.Set<String> keys = redisTemplate.keys("event:*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     public Page<BookingResponse> getMyBookings(String userEmail, Pageable pageable) {
-        return bookingRepo.findByUserEmail(userEmail, pageable)
-                .map(this::toResponse);
+        String cacheKey = "userBookingsV2:" + userEmail + ":" + pageable.getPageNumber() + ":" + pageable.getPageSize();
+        try {
+            String cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                PageResponse<BookingResponse> pr = objectMapper.readValue(cached, new TypeReference<PageResponse<BookingResponse>>() {});
+                return new org.springframework.data.domain.PageImpl<>(pr.content, pageable, pr.totalElements);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        Page<BookingResponse> result = bookingRepo.findByUserEmail(userEmail, pageable).map(this::toResponse);
+
+        try {
+            PageResponse<BookingResponse> pr = PageResponse.of(result);
+            redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(pr), Duration.ofMinutes(5));
+        } catch (Exception e) {
+            // ignore
+        }
+        return result;
     }
 
     public List<String> getBookedSeatsForEvent(Long eventId) {

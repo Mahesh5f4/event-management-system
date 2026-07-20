@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Page;
+import com.EventmanagementbyMahesh.event.common.dto.PageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +64,7 @@ public class EventController {
             description = "Returns a paginated list of all upcoming events, ordered by start time descending.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Events fetched successfully")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<EventResponse>>> getAll(
+    public ResponseEntity<ApiResponse<PageResponse<EventResponse>>> getAll(
             @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of events per page", example = "10") @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.ok(service.getAll(page, size), "Events fetched successfully"));

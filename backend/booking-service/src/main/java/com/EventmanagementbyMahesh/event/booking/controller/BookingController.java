@@ -16,6 +16,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import com.EventmanagementbyMahesh.event.common.dto.PageResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
@@ -130,15 +131,15 @@ public class BookingController {
     @Operation(summary = "Get my bookings",
             description = "Returns a paginated list of all bookings made by the currently authenticated user.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings fetched successfully")
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<BookingResponse>>> getMyBookings(
+    @GetMapping("/my-bookings")
+    public ResponseEntity<ApiResponse<PageResponse<BookingResponse>>> getMyBookings(
             Authentication auth,
-            @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page number (0-indexed)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") int size) {
         String email = auth.getName();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<BookingResponse> bookings = service.getMyBookings(email, pageable);
-        return ResponseEntity.ok(ApiResponse.ok(bookings, "Bookings fetched successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(PageResponse.of(bookings), "Bookings fetched successfully"));
     }
 
     @Operation(summary = "Download PDF ticket",

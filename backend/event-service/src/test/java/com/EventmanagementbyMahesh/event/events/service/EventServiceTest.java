@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
+import com.EventmanagementbyMahesh.event.common.dto.PageResponse;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -102,11 +102,11 @@ class EventServiceTest {
         when(repo.findByEndTimeAfterOrderByIdDesc(any(LocalDateTime.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(event)));
 
-        Page<EventResponse> result = service.getAll(0, 10);
+        PageResponse<EventResponse> result = service.getAll(0, 10);
 
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Tech Conf", result.getContent().get(0).title);
+        assertEquals(1, result.content.size());
+        assertEquals("Test Event", result.content.get(0).title);
     }
 
     @Test
