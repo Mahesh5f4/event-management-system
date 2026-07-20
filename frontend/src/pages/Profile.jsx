@@ -40,12 +40,12 @@ const Profile = () => {
             <div className="relative w-32 h-32 mx-auto mb-6 group">
               <div className="w-full h-full rounded-full bg-white/10 flex items-center justify-center text-white overflow-hidden border border-white/10">
                 {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={user.avatarUrl} alt={user.name} width="128" height="128" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <User size={64} className="opacity-20" />
                 )}
               </div>
-              <button className="absolute bottom-0 right-0 p-2 bg-white text-black rounded-full shadow-xl hover:scale-110 transition-transform">
+              <button aria-label="Change profile picture" className="absolute bottom-0 right-0 p-2 bg-white text-black rounded-full shadow-xl hover:scale-110 transition-transform">
                 <Camera size={16} />
               </button>
             </div>

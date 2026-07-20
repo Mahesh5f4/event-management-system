@@ -21,6 +21,8 @@ const BookingCard = memo(({ booking, index, onDownload }) => (
           src={booking.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800'} 
           className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity will-change-transform"
           alt={booking.eventTitle}
+          width="400"
+          height="300"
           loading="lazy"
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
