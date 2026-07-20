@@ -171,7 +171,7 @@ const Profile = () => {
               <Button variant="secondary" className="w-full justify-start text-xs group" onClick={() => setShowPasswordModal(true)}>
                 <Key size={14} className="mr-3 text-white/40 group-hover:text-white transition-colors" /> Change Password
               </Button>
-              <Button variant="secondary" className="w-full justify-start text-xs group" onClick={() => {}}>
+              <Button variant="secondary" className="w-full justify-start text-xs group" onClick={() => navigate('/settings')}>
                 <Settings size={14} className="mr-3 text-white/40 group-hover:text-white transition-colors" /> Account Settings
               </Button>
               <Button variant="secondary" className="w-full justify-start text-xs group text-red-400 hover:text-red-300" onClick={handleLogout}>
