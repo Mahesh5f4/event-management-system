@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -106,5 +107,12 @@ public class AuthController {
     @GetMapping("/internal/users/analytics")
     public ResponseEntity<?> getUserAnalytics() {
         return ResponseEntity.ok(service.getUserAnalytics());
+    }
+
+    @Operation(summary = "Admin: Get All Users", description = "Admin endpoint to fetch a list of all registered users.")
+    @GetMapping("/admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(service.getAllUsers());
     }
 }

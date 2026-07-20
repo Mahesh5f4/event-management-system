@@ -24,7 +24,7 @@ spring:
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
-            - Path=/api/auth/register, /api/auth/login, /api/auth/verify-otp, /api/auth/google, /api/auth/forgot-password, /api/auth/reset-password, /api/admin/analytics/**
+            - Path=/api/auth/register, /api/auth/login, /api/auth/verify-otp, /api/auth/google, /api/auth/forgot-password, /api/auth/reset-password, /api/auth/admin/users
 
         # Route to Event Service
         - id: event-service
@@ -36,7 +36,7 @@ spring:
         - id: booking-service
           uri: ${BOOKING_SERVICE_URL:http://localhost:8083}
           predicates:
-            - Path=/api/bookings/**, /api/seats/**, /api/ws-booking/**
+            - Path=/api/bookings/**, /api/seats/**, /api/ws-booking/**, /api/admin/analytics/**
 
 management:
   endpoints:

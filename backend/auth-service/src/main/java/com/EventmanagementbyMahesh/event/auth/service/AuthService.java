@@ -228,4 +228,10 @@ public class AuthService {
         map.put("activeUsers", activeUsersList);
         return map;
     }
+
+    public java.util.List<com.EventmanagementbyMahesh.event.auth.dto.response.UserDto> getAllUsers() {
+        return repo.findAll().stream()
+                .map(u -> new com.EventmanagementbyMahesh.event.auth.dto.response.UserDto(u.getId(), u.getEmail(), u.getName(), u.getAvatarUrl()))
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
