@@ -60,9 +60,9 @@ const Success = () => {
       <AnimatePresence mode="wait">
         {(status === 'processing' || status === 'idle') && (
           <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-md">
-            <Card className="p-8 sm:p-12 text-center space-y-8">
+            <Card className="p-6 sm:p-10 text-center space-y-6">
               <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
-              <h1 className="text-3xl font-medium text-white tracking-tight">Validating Experience</h1>
+              <h1 className="text-2xl font-medium text-white tracking-tight">Validating Experience</h1>
               <p className="text-white/40 text-sm leading-relaxed">Securing your spot in the global inventory...</p>
               <div className="p-4 rounded-xl liquid-glass text-white/30 font-mono text-[10px] tracking-widest">
                 TX_ID: {bookingId.toUpperCase()}
@@ -73,11 +73,11 @@ const Success = () => {
 
         {status === 'failed' && (
           <motion.div key="failed" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
-            <Card className="p-8 sm:p-12 text-center space-y-8">
-              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto border border-red-500/20">
-                <XCircle size={32} />
+            <Card className="p-6 sm:p-10 text-center space-y-6">
+              <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto border border-red-500/20">
+                <XCircle size={28} />
               </div>
-              <h1 className="text-3xl font-medium text-white tracking-tight">Reservation Failed</h1>
+              <h1 className="text-2xl font-medium text-white tracking-tight">Reservation Failed</h1>
               <p className="text-red-500/80 text-sm p-4 rounded-xl bg-red-500/5 border border-red-500/10">
                 {error || 'The inventory lock expired. Please try again.'}
               </p>
@@ -91,27 +91,27 @@ const Success = () => {
 
         {status === 'completed' && (
           <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-xl">
-            <Card className="p-8 sm:p-12 text-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                 <Sparkles size={120} className="text-white" />
+            <Card className="p-6 sm:p-10 text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-10 rotate-12">
+                 <Sparkles size={100} className="text-white" />
               </div>
               
-              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-10 text-black shadow-2xl shadow-white/10">
-                <CheckCircle size={40} />
+              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 text-black shadow-2xl shadow-white/10">
+                <CheckCircle size={32} />
               </div>
               
-              <h1 className="text-5xl font-medium text-white tracking-tight mb-4 italic">Success</h1>
-              <p className="text-white/50 text-lg mb-12">
+              <h1 className="text-4xl font-medium text-white tracking-tight mb-3 italic">Success</h1>
+              <p className="text-white/50 text-base mb-10">
                 Your spot is confirmed. Welcome to the inner circle.
               </p>
 
               {/* Digital Pass Visual */}
-              <div className="bg-white text-black rounded-[2.5rem] overflow-hidden mb-12 text-left">
-                <div className="p-8 border-b-2 border-dashed border-black/10 relative">
-                   <div className="absolute top-1/2 -left-4 w-8 h-8 bg-[#0a0a0a] rounded-full -translate-y-1/2" />
-                   <div className="absolute top-1/2 -right-4 w-8 h-8 bg-[#0a0a0a] rounded-full -translate-y-1/2" />
+              <div className="bg-white text-black rounded-[2rem] overflow-hidden mb-10 text-left">
+                <div className="p-6 border-b-2 border-dashed border-black/10 relative">
+                   <div className="absolute top-1/2 -left-4 w-6 h-6 bg-[#0a0a0a] rounded-full -translate-y-1/2" />
+                   <div className="absolute top-1/2 -right-4 w-6 h-6 bg-[#0a0a0a] rounded-full -translate-y-1/2" />
                    
-                   <div className="flex justify-between items-start mb-8">
+                   <div className="flex justify-between items-start mb-6">
                       <div>
                          <span className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Entry Pass</span>
                          <div className="text-lg font-bold font-mono uppercase mt-1">{currentBookingId?.slice(-8)}</div>
@@ -121,11 +121,11 @@ const Success = () => {
 
                    <div>
                       <span className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Reserved Seats</span>
-                      <div className="text-3xl font-medium tracking-tighter mt-1 italic uppercase">{seats || 'Open Access'}</div>
+                      <div className="text-2xl font-medium tracking-tighter mt-1 italic uppercase">{seats || 'Open Access'}</div>
                    </div>
                 </div>
 
-                <div className="p-8 bg-black/[0.02] flex items-center justify-between">
+                <div className="p-6 bg-black/[0.02] flex items-center justify-between">
                    <div className="flex items-center gap-3">
                       <ShieldCheck size={18} className="text-emerald-500" />
                       <span className="text-xs font-bold text-black/60">Encrypted Pass Issued</span>

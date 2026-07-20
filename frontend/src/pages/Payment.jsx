@@ -194,17 +194,17 @@ const Payment = () => {
   const grandTotal = totalAmount + convenienceFee;
 
   return (
-    <div className="container mx-auto px-6 py-20 max-w-xl">
+    <div className="container mx-auto px-6 py-16 max-w-xl">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="p-6 sm:p-10 md:p-12 relative overflow-hidden">
+        <Card className="p-5 sm:p-8 md:p-10 relative overflow-hidden">
 
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-black mx-auto mb-6 shadow-xl shadow-white/5">
-              <Lock size={32} />
+          <div className="text-center mb-10">
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-black mx-auto mb-5 shadow-xl shadow-white/5">
+              <Lock size={28} />
             </div>
-            <h1 className="text-4xl font-medium text-white tracking-tight mb-2">Checkout</h1>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Fast &amp; secure payment</p>
+            <h1 className="text-3xl font-medium text-white tracking-tight mb-2">Checkout</h1>
+            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Fast &amp; secure payment</p>
           </div>
 
           <AnimatePresence mode="wait">
@@ -212,9 +212,9 @@ const Payment = () => {
             {/* SUMMARY — default view */}
             {step === STEP.SUMMARY && (
               <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="space-y-8 mb-12">
+                <div className="space-y-6 mb-10">
                   {/* Order Summary */}
-                  <div className="p-6 sm:p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-6">
+                  <div className="p-5 sm:p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-5">
                     <h3 className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Order Summary</h3>
 
                     <div className="space-y-4">
@@ -243,9 +243,9 @@ const Payment = () => {
                       </div>
                     </div>
 
-                    <div className="pt-6 border-t border-white/5 flex justify-between items-end">
+                    <div className="pt-5 border-t border-white/5 flex justify-between items-end">
                       <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Total Payable</span>
-                      <span className="text-4xl font-medium text-white tracking-tighter">
+                      <span className="text-3xl font-medium text-white tracking-tighter">
                         ₹{grandTotal.toLocaleString('en-IN')}
                       </span>
                     </div>
@@ -266,7 +266,7 @@ const Payment = () => {
 
                   <Button
                     onClick={handlePayment}
-                    className="w-full py-5 text-lg"
+                    className="w-full py-4 text-base"
                     id="pay-now-btn"
                   >
                     Pay ₹{grandTotal.toLocaleString('en-IN')} Securely

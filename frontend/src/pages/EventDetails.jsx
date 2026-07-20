@@ -243,8 +243,8 @@ const EventDetails = () => {
                     loading="eager"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-12">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium text-white tracking-tight leading-[1.1]">{event.title}</h1>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
+                    <h1 className="text-4xl sm:text-5xl lg:text-5xl font-medium text-white tracking-tight leading-[1.1]">{event.title}</h1>
                   </div>
                 </div>
 
@@ -254,8 +254,8 @@ const EventDetails = () => {
                     { icon: MapPin, label: "Venue", value: event.location },
                     { icon: Clock, label: "Starts", value: new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
                   ].map((info, i) => (
-                    <Card key={i} className="p-5 flex flex-col items-center text-center">
-                      <div className="p-3 rounded-2xl bg-white/5 text-white mb-3">
+                    <Card key={i} className="p-4 flex flex-col items-center text-center">
+                      <div className="p-3 rounded-2xl bg-white/5 text-white mb-2">
                         <info.icon size={20} />
                       </div>
                       <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{info.label}</div>
@@ -264,20 +264,20 @@ const EventDetails = () => {
                   ))}
                 </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-medium text-white tracking-tight">Overview</h3>
-                  <p className="text-white/60 leading-relaxed font-light whitespace-pre-wrap text-lg">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-medium text-white tracking-tight">Overview</h3>
+                  <p className="text-white/60 leading-relaxed font-light whitespace-pre-wrap text-base">
                     {event.description}
                   </p>
                 </div>
               </div>
 
               <div className="lg:col-span-5">
-                <Card className="p-8 sticky top-32 space-y-8">
-                  <div className="pb-8 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-4">Official Pricing</span>
+                <Card className="p-6 sticky top-32 space-y-6">
+                  <div className="pb-6 border-b border-white/5">
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-3">Official Pricing</span>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-medium text-white tracking-tighter">₹{event.price}</span>
+                      <span className="text-4xl font-medium text-white tracking-tighter">₹{event.price}</span>
                       <span className="text-white/40 font-bold uppercase text-[10px] tracking-widest">/ Admission</span>
                     </div>
                   </div>
@@ -292,7 +292,7 @@ const EventDetails = () => {
                         <button
                           key={n}
                           onClick={() => setTicketQuantity(n)}
-                          className={`w-12 h-12 rounded-2xl font-bold text-sm transition-all duration-300 ${ticketQuantity === n
+                          className={`w-10 h-10 rounded-2xl font-bold text-sm transition-all duration-300 ${ticketQuantity === n
                             ? 'bg-white text-black scale-105 shadow-xl shadow-white/10'
                             : 'bg-white/5 text-white/40 hover:text-white border border-white/5'
                             }`}
@@ -304,7 +304,7 @@ const EventDetails = () => {
                   </div>
 
                   <Button
-                    className="w-full py-5 text-base"
+                    className="w-full py-4 text-sm"
                     onClick={() => { setSelectedSeats([]); setStep('seats'); }}
                     disabled={event.availableSeats === 0}
                   >
@@ -319,19 +319,19 @@ const EventDetails = () => {
                 <div className="lg:col-span-7 space-y-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-3xl font-medium text-white tracking-tight">Guest Reviews</h3>
-                      <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">Authentic experiences from our community</p>
+                      <h3 className="text-2xl font-medium text-white tracking-tight">Guest Reviews</h3>
+                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Authentic experiences from our community</p>
                     </div>
-                    <Badge variant="glass" className="px-4 py-2 flex items-center gap-2 backdrop-blur-xl">
+                    <Badge variant="glass" className="px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-xl">
                       <Star size={16} className="text-yellow-500 fill-yellow-500" />
                       <span className="text-xl font-bold">{event.averageRating?.toFixed(1) || '0.0'}</span>
                       <span className="text-white/40 text-xs font-medium">({event.reviewCount || 0})</span>
                     </Badge>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {reviews.length > 0 ? reviews.map((review) => (
-                      <Card key={review.id} className="p-6 space-y-4 hover:bg-white/[0.04] transition-colors group">
+                      <Card key={review.id} className="p-5 space-y-3 hover:bg-white/[0.04] transition-colors group">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
@@ -367,9 +367,9 @@ const EventDetails = () => {
                 </div>
 
                 <div className="lg:col-span-5">
-                  <Card className="p-8 space-y-8 sticky top-32">
+                  <Card className="p-6 space-y-6 sticky top-32">
                     <div className="space-y-2">
-                      <h4 className="text-xl font-medium text-white tracking-tight">Share Your Experience</h4>
+                      <h4 className="text-lg font-medium text-white tracking-tight">Share Your Experience</h4>
                       <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Help others discover this event</p>
                     </div>
 
@@ -544,9 +544,9 @@ const EventDetails = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="lg:col-span-8">
-                  <Card className="p-12 md:p-20 relative overflow-hidden bg-white/[0.02] transform-gpu">
+                  <Card className="p-8 md:p-12 relative overflow-hidden bg-white/[0.02] transform-gpu">
                     <div className="mb-20">
                       <div className="w-3/4 h-[2px] bg-gradient-to-r from-transparent via-white/20 to-transparent mx-auto rounded-full" />
                       <div className="text-center mt-6 text-[10px] font-bold text-white/20 uppercase tracking-[1em]">Stage Area</div>
@@ -582,10 +582,10 @@ const EventDetails = () => {
                 </div>
 
                 <div className="lg:col-span-4">
-                  <Card className="p-8 space-y-8 transform-gpu">
-                    <div className="flex items-center gap-4 mb-2">
-                      <Ticket size={24} className="text-white" />
-                      <h3 className="text-xl font-medium text-white uppercase tracking-tight">Order Summary</h3>
+                  <Card className="p-6 space-y-6 transform-gpu">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Ticket size={20} className="text-white" />
+                      <h3 className="text-lg font-medium text-white uppercase tracking-tight">Order Summary</h3>
                     </div>
 
                     <div className="space-y-6">
@@ -610,7 +610,7 @@ const EventDetails = () => {
                     </div>
 
                     <Button
-                      className="w-full py-5 text-base"
+                      className="w-full py-4 text-sm"
                       onClick={handleBook}
                       disabled={selectedSeats.length !== ticketQuantity}
                     >
