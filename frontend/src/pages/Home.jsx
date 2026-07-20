@@ -8,7 +8,7 @@ import Badge from '../components/ui/Badge';
 
 const EventCard = memo(({ event }) => (
   <Link to={`/event/${event.id}`} className="group transform-gpu">
-    <div className="liquid-glass flex flex-col h-full bg-white/5 hover:bg-white/10 transition-all duration-300 rounded-[2rem] overflow-hidden">
+    <div className="liquid-glass flex flex-col h-full bg-white/5 hover:bg-white/10 transition-all duration-300 rounded-[1.5rem] overflow-hidden">
       <div className="relative aspect-[16/10] overflow-hidden">
         <img 
           src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800'} 
@@ -23,8 +23,8 @@ const EventCard = memo(({ event }) => (
         </div>
       </div>
       
-      <div className="p-8 flex flex-col flex-1">
-        <h3 className="text-2xl font-medium text-white mb-6 group-hover:text-white transition-colors line-clamp-2 leading-snug">
+      <div className="p-6 flex flex-col flex-1">
+        <h3 className="text-xl font-medium text-white mb-4 group-hover:text-white transition-colors line-clamp-2 leading-snug">
           {event.title}
         </h3>
         
@@ -39,8 +39,8 @@ const EventCard = memo(({ event }) => (
           </div>
         </div>
 
-        <div className="pt-8 mt-8 border-t border-white/5 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-widest text-white/30">
+        <div className="pt-6 mt-6 border-t border-white/5 flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">
             {event.availableSeats} Seats Left
           </span>
           <div className="flex items-center gap-2 text-white font-medium text-sm">
@@ -137,13 +137,13 @@ const Home = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3].map(i => (
               <div key={i} className="liquid-glass aspect-[4/5] rounded-3xl animate-pulse bg-white/5" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
