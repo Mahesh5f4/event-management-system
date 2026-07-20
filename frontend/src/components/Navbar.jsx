@@ -59,7 +59,7 @@ const Navbar = () => {
             >
               <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40 group-hover:text-white transition-colors overflow-hidden">
                 {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+                  <img src={user.avatarUrl} alt="User Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                 ) : (
                   <User size={16} />
                 )}

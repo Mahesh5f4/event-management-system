@@ -221,7 +221,7 @@ const AdminDashboard = () => {
                           <img 
                             src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=200'} 
                             className="w-10 h-10 rounded-lg object-cover"
-                            alt=""
+                            alt="Event Thumbnail"
                           />
                           <div>
                             <div className="font-medium text-white">{event.title}</div>
@@ -345,7 +345,7 @@ const AdminDashboard = () => {
                               <img 
                                 src={user.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'} 
                                 className="w-10 h-10 rounded-full object-cover"
-                                alt=""
+                                alt="User Avatar"
                               />
                               <div>
                                 <div className="font-medium text-white">{user.name}</div>

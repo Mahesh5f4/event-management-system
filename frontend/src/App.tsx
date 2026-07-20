@@ -60,6 +60,8 @@ const VideoBackground = memo(() => (
       muted 
       loop 
       playsInline 
+      aria-hidden="true"
+      title="Background Event Video"
       src={BG_VIDEO} 
     />
     <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transform-gpu" />

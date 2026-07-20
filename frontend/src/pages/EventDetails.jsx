@@ -14,6 +14,7 @@ import { reviewService } from '../services/api';
 
 const Seat = memo(({ seatId, isBooked, isLocked, isSelected, onSelect, label }) => (
   <button
+    aria-label={`Seat ${seatId}`}
     disabled={isBooked || isLocked}
     className={`
       w-10 h-10 md:w-8 md:h-8 rounded-xl text-[10px] font-bold transition-all border transform-gpu flex items-center justify-center flex-shrink-0
@@ -335,7 +336,7 @@ const EventDetails = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-                              <img src={review.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${review.userName}`} alt="" className="w-full h-full object-cover" />
+                              <img src={review.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${review.userName}`} alt="Reviewer Avatar" className="w-full h-full object-cover" />
                             </div>
                             <div>
                               <h4 className="text-white font-medium">{review.userName}</h4>

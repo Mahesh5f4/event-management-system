@@ -14,6 +14,7 @@ const EventCard = memo(({ event }) => (
         src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=800'} 
         alt={event.title}
         loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform z-0"
       />
       {/* Gradient Overlay for readability */}
