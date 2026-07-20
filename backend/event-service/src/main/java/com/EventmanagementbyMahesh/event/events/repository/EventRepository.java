@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
-    Page<Event> findByEndTimeAfterOrderByStartTimeDesc(LocalDateTime time, Pageable pageable);
+    Page<Event> findByEndTimeAfterOrderByIdDesc(LocalDateTime time, Pageable pageable);
     java.util.List<Event> findAllByEndTimeBefore(LocalDateTime time);
 }

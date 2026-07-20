@@ -41,7 +41,7 @@ public class EventService {
     @Cacheable(value = "events", key = "'page:' + #page + ':size:' + #size")
     public Page<EventResponse> getAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return repo.findByEndTimeAfterOrderByStartTimeDesc(LocalDateTime.now(), pageable).map(this::toResponse);
+        return repo.findByEndTimeAfterOrderByIdDesc(LocalDateTime.now(), pageable).map(this::toResponse);
     }
 
     @Cacheable(value = "event", key = "#id")

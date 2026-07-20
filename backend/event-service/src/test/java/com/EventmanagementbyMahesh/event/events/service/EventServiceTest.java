@@ -99,7 +99,7 @@ class EventServiceTest {
 
     @Test
     void getAll_Success() {
-        when(repo.findByEndTimeAfterOrderByStartTimeDesc(any(LocalDateTime.class), any(PageRequest.class)))
+        when(repo.findByEndTimeAfterOrderByIdDesc(any(LocalDateTime.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(event)));
 
         Page<EventResponse> result = service.getAll(0, 10);

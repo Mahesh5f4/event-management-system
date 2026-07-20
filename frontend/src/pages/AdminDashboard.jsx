@@ -27,6 +27,12 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userPage, setUserPage] = useState(0);
+  const userPageSize = 10;
+
+  useEffect(() => {
+    setUserPage(0);
+  }, [userSearchTerm]);
 
   useEffect(() => {
     dispatch(fetchEvents({ page: 0, size: pageSize }));
@@ -331,6 +337,7 @@ const AdminDashboard = () => {
                         u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
                         u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
                       )
+                      .slice(userPage * userPageSize, (userPage + 1) * userPageSize)
                       .map((user) => (
                         <tr key={user.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                           <td className="px-8 py-5">
@@ -357,6 +364,49 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </Card>
+          )}
+
+          {/* Users Pagination */}
+          {!loadingUsers && Math.ceil(
+            users.filter(u => 
+              u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+              u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+            ).length / userPageSize
+          ) > 1 && (
+            <div className="mt-12 flex items-center justify-center gap-4">
+              <button 
+                onClick={() => setUserPage(prev => Math.max(prev - 1, 0))}
+                disabled={userPage === 0}
+                className="p-3 rounded-xl liquid-glass text-white/40 hover:text-white disabled:opacity-20 transition-all"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-xs font-bold text-white/20 uppercase tracking-[0.2em]">
+                Page {userPage + 1} of {Math.ceil(
+                  users.filter(u => 
+                    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+                  ).length / userPageSize
+                )}
+              </span>
+              <button 
+                onClick={() => setUserPage(prev => Math.min(prev + 1, Math.ceil(
+                  users.filter(u => 
+                    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+                  ).length / userPageSize
+                ) - 1))}
+                disabled={userPage === Math.ceil(
+                  users.filter(u => 
+                    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+                  ).length / userPageSize
+                ) - 1}
+                className="p-3 rounded-xl liquid-glass text-white/40 hover:text-white disabled:opacity-20 transition-all"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           )}
         </>
       )}
