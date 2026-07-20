@@ -9,7 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { updateProfile, sendChangePasswordOtp, changePassword, logout } from '../store/slices/authSlice';
+import { updateProfile } from '../store/slices/authSlice';
+import { authService } from '../services/api';
 
 const Settings = () => {
   const { user } = useAppSelector(state => state.auth);
@@ -64,10 +65,10 @@ const Settings = () => {
     setIsChangingPassword(true);
     setPasswordError('');
     try {
-      await dispatch(sendChangePasswordOtp({ email: user.email })).unwrap();
+      await authService.forgotPassword({ email: user.email });
       setPasswordStep('otp');
     } catch (error) {
-      setPasswordError(error || 'Failed to send OTP');
+      setPasswordError(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setIsChangingPassword(false);
     }
@@ -78,11 +79,11 @@ const Settings = () => {
     setIsChangingPassword(true);
     setPasswordError('');
     try {
-      await dispatch(changePassword({ 
+      await authService.resetPassword({ 
         email: user.email, 
         otp: passwordData.otp, 
         newPassword: passwordData.newPassword 
-      })).unwrap();
+      });
       setPasswordStep('success');
       setTimeout(() => {
         setShowPasswordModal(false);
@@ -90,7 +91,7 @@ const Settings = () => {
         setPasswordData({ otp: '', newPassword: '' });
       }, 2000);
     } catch (error) {
-      setPasswordError(error || 'Failed to change password');
+      setPasswordError(error.response?.data?.message || 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
     }

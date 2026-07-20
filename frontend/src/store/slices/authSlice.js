@@ -119,29 +119,7 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
-export const sendChangePasswordOtp = createAsyncThunk(
-  'auth/sendChangePasswordOtp',
-  async (payload, { rejectWithValue }) => {
-    try {
-      const response = await authService.forgotPassword(payload);
-      return response.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to send OTP');
-    }
-  }
-);
 
-export const changePassword = createAsyncThunk(
-  'auth/changePassword',
-  async (payload, { rejectWithValue }) => {
-    try {
-      const response = await authService.resetPassword(payload);
-      return response.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Password reset failed');
-    }
-  }
-);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -253,27 +231,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(sendChangePasswordOtp.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(sendChangePasswordOtp.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(sendChangePasswordOtp.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(changePassword.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(changePassword.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(changePassword.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
   },
 });
