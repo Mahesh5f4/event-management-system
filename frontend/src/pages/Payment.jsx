@@ -6,7 +6,7 @@ import { paymentService, seatLockService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ArrowRight, Lock, CreditCard, CheckCircle,
-  AlertCircle, Loader2, Wallet, Banknote, X
+  AlertCircle, Loader2, Wallet, Banknote, X, Coins
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -120,6 +120,7 @@ const Payment = () => {
       currency: orderData.currency,
       name: 'EventHub',
       description: orderData.eventTitle || 'Event Ticket',
+      image: '/logo.png',
       order_id: orderData.razorpayOrderId,
       prefill: {
         name: orderData.userName || '',
@@ -304,7 +305,7 @@ const Payment = () => {
               <motion.div key="paying" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="py-16 text-center space-y-6">
                 <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto">
-                  <CreditCard size={32} className="text-white animate-pulse" />
+                  <Coins size={32} className="text-white animate-pulse" />
                 </div>
                 <h2 className="text-2xl font-medium text-white tracking-tight">Complete Your Payment</h2>
                 <p className="text-white/40 text-sm leading-relaxed">
