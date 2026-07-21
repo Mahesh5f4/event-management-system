@@ -4,6 +4,8 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 
+import maheshImg from '../assets/mahesh.jpg';
+
 const About = () => {
   const skills = [
     { name: 'Java / Spring Boot', category: 'Backend' },
@@ -87,7 +89,7 @@ const About = () => {
           >
             <div className="aspect-square rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative group bg-white/5">
               <img 
-                src="/src/assets/mahesh.jpg" 
+                src={maheshImg} 
                 alt="Mahesh Babu"
                 className="w-full h-full object-cover transition-all duration-700"
                 onError={(e) => {
